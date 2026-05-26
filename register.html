@@ -25,24 +25,21 @@
     <section class="login-section" style="padding: 100px 20px; background: #f8f9fa;">
         <div class="container">
             <div class="login-box">
-                <h2 style="text-align: center; margin-bottom: 30px; color: white;">Student/Staff Registration</h2>
+                <h2 style="text-align: center; margin-bottom: 30px; color: white;">Register</h2>
                 
                 <form id="registerForm">
                     <div class="form-group">
                         <label for="fullName">Full Name</label>
-                        <input type="text" id="fullName" placeholder="Enter full name" required>
+                        <input type="text" id="fullName" required>
                     </div>
-
                     <div class="form-group">
-                        <label for="regEmail">Email Address</label>
-                        <input type="email" id="regEmail" placeholder="Enter email" required>
+                        <label for="regEmail">Email</label>
+                        <input type="email" id="regEmail" required>
                     </div>
-
                     <div class="form-group">
                         <label for="regPassword">Password</label>
-                        <input type="password" id="regPassword" placeholder="Create password" required minlength="6">
+                        <input type="password" id="regPassword" required minlength="6">
                     </div>
-
                     <div class="form-group">
                         <label for="role">Role</label>
                         <select id="role" required onchange="updateRoleOptions()">
@@ -53,8 +50,8 @@
                         </select>
                     </div>
 
-                    <div class="form-group" id="sectionGroup" style="display: none;">
-                        <label for="schoolSection">School Section</label>
+                    <div class="form-group" id="sectionGroup" style="display:none;">
+                        <label for="schoolSection">Section</label>
                         <select id="schoolSection" onchange="populateClassOptions()">
                             <option value="">Select Section</option>
                             <option value="primary">Primary</option>
@@ -62,22 +59,15 @@
                         </select>
                     </div>
 
-                    <div class="form-group" id="classGroup" style="display: none;">
-                        <label for="classLevel">Class Level</label>
-                        <select id="classLevel">
-                            <option value="">Select Class</option>
-                        </select>
+                    <div class="form-group" id="classGroup" style="display:none;">
+                        <label for="classLevel">Class</label>
+                        <select id="classLevel"></select>
                     </div>
 
-                    <button type="submit" class="btn" style="width: 100%; margin-top: 20px;">Register Now</button>
+                    <button type="submit" class="btn" style="width:100%; margin-top:20px;">Register</button>
                 </form>
 
-                <p id="registerMessage" style="text-align: center; margin-top: 15px; font-weight: 500;"></p>
-                
-                <p style="text-align: center; margin-top: 25px; color: white;">
-                    Already have an account? 
-                    <a href="login.html" style="color: #ffd700;">Login Here</a>
-                </p>
+                <p id="registerMessage" style="text-align:center; margin-top:15px;"></p>
             </div>
         </div>
     </section>
