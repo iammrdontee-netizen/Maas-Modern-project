@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admissions-Maas Modern Group of School</title>
+     <link rel="stylesheet" href="app.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;&display=swap" rel="stylesheet">
+   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+    emailjs.init("wMjGZ0w4hgRKKMe20");
+</script>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h2>Maas Modern Group of School</h2>
+                <a href="index.html"><img src="images/logo.jpg" alt="school logo" class="logo-image" width="100" height="100"></a>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="index.html#about">About Us</a></li>
+                    <li><a href="index.html#gallery">Gallery</a></li>
+                    <li><a href="login.html">login</a></li>
+                    <li><a href="admissions.html">Admissions</a></li>
+                    <li><a href="index.html#contact">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <section class="admissions-hero">
+        <div class="container">
+            <h1>Admissions</h1>
+            <p>Join our vibrant learning community</p>
+        </div>
+    </section>
+    <section class="admissions-content">
+        <div class="container">
+            <h2>Admission Process</h2>
+            <div class="process-steps">
+                <div class="step">
+                    <h3>1. Application Form</h3>
+                    <p>Fill out the online application form or download and submit the physical form at the school.</p>
+                </div>
+                <div class="step">
+                    <h3>2. Entrance Assessment </h3>
+                    <p>Students undergo a simple assessment appropriate to their age and class level</p>
+                </div>
+                <div class="step">
+                    <h3>3. Interview</h3>
+                    <p>Parent and child interview with the School Director</p>
+                </div>
+                <div class="step">
+                    <h3>4. Offer Letter</h3>
+                    <p>Successful applicants receive an official admission offer.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <h2>Requirements</h2>
+    <ul class="requirements">
+        <li>Completed application form</li>
+        <li>Birth certificate or age declaration</li>
+        <li>Previous school report(if applicable)</li>
+        <li>2 passport photographs</li>
+        <li>Immunization record</li>
+        <li>Transfer certificate(for students above Primary 1)</li>
+    </ul>
+    <section class="admissions-content">
+        <div class="container">
+            <h2>Admission Process</h2>
+            <div class="apply-box">
+                <h2>Online Application Form</h2>
+                <p>Fill the form below. We will contact you within 48 hours.</p>
+                <form id="applicationForm">
+                    <div class="form-group">
+                        <label>Child's Full Name   *</label>
+                        <input type="text" id="childName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Date of Birth  *</label>
+                        <input type="date" id="dob" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Class Applying For *</label>
+                        <select id="classApplying" required>
+                            <option value="">Select Class</option>
+                            <option value="Pre-school">Pre-School</option>
+                            <option value="Primary">Primary</option>
+                            <option value="Junior-secondary">Junior-secondary</option>
+                            <option value="Senior-secondary">Senior-secondary</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Parent Number *</label>
+                        <input type="tel" id="parentPhone" required>
+                    </div>
+                    <div class="form-grop">
+                        <label>Additional Information</label>
+                        <textarea id="message" rows="4"></textarea>
+                    </div>
+                    <button type="submit" class="btn" id="submitBtn">Submit Application</button>
+                </form>
+                <div id="formMessage" style="margin-top: 20px; display: none;"></div>
+            </div>
+        </div>
+
+    </section>
+    <footer>
+        <div class="container">
+            <p class="copyright">&copy; 2026 Maas Modern Group of School(Developer:Lawal Babatunde).All Rights Reserved.</p>
+        </div>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/app.js"></script>
+    
+</body>
+</html>
