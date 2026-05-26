@@ -93,35 +93,52 @@ if (document.getElementById('registerForm')) {
     });
 }
 
-// ==================== LOGIN ====================
+// ==================== LOGIN SCRIPT ====================
 if (document.getElementById('loginForm')) {
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = document.getElementById('email').value;
+
+        const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         const messageEl = document.getElementById('loginMessage');
 
+        messageEl.textContent = "Logging in...";
+        messageEl.style.color = "blue";
+
         try {
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email,
+                password
+            });
+
             if (error) throw error;
 
-            const { data: profile } = await supabaseClient
+            // Get user role from profiles table
+            const { data: profile, error: profileError } = await supabaseClient
                 .from('profiles')
                 .select('role')
                 .eq('id', data.user.id)
                 .single();
 
-            if (profile?.role === 'student') window.location.href = 'student.html';
-            else if (profile?.role === 'teacher') window.location.href = 'teacher.html';
-            else if (profile?.role === 'admin') window.location.href = 'admin.html';
-            else window.location.href = 'index.html';
+            if (profileError) throw profileError;
+
+            // Redirect based on role
+            if (profile?.role === 'student') {
+                window.location.href = 'student.html';
+            } else if (profile?.role === 'teacher') {
+                window.location.href = 'teacher.html';
+            } else if (profile?.role === 'admin') {
+                window.location.href = 'admin.html';
+            } else {
+                window.location.href = 'index.html';
+            }
+
         } catch (error) {
-            messageEl.textContent = error.message || 'Invalid credentials';
             messageEl.style.color = "red";
+            messageEl.textContent = error.message || "Login failed. Check your credentials.";
         }
     });
 }
-
 // ==================== STUDENT PORTAL ====================
 async function loadStudentDashboard() {
     await checkAuthAndLoadName();
