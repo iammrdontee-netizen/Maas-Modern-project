@@ -47,20 +47,11 @@ function changeSlide(n) {
 }
 setInterval(() => changeSlide(1), 5000);
 
-// ==================== REGISTRATION SCRIPT (Isolated) ====================
+// ==================== REGISTRATION (Clean Version) ====================
 if (document.getElementById('registerForm')) {
-    
-    // Event listeners for role and section dropdowns
-    const roleSelect = document.getElementById('role');
-    const sectionSelect = document.getElementById('schoolSection');
-
-    if (roleSelect) roleSelect.addEventListener('change', updateRoleOptions);
-    if (sectionSelect) sectionSelect.addEventListener('change', populateClassOptions);
-
-    // Main Registration Handler
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         const fullname = document.getElementById('fullName').value.trim();
         const email = document.getElementById('regEmail').value.trim();
         const password = document.getElementById('regPassword').value;
@@ -69,74 +60,37 @@ if (document.getElementById('registerForm')) {
         const classLevel = document.getElementById('classLevel')?.value || null;
 
         const messageEl = document.getElementById('registerMessage');
-
-        // Clear previous message
-        messageEl.textContent = '';
+        messageEl.textContent = 'Processing...';
 
         try {
             const { data, error } = await supabaseClient.auth.signUp({
-                email: email,
-                password: password,
+                email,
+                password,
                 options: {
-                    emailRedirectTo: window.location.origin + '/login.html',
-                    data: { full_name: fullname }
+                    emailRedirectTo: window.location.origin + '/login.html'
                 }
             });
 
             if (error) throw error;
 
-            // Save user profile
-            const { error: profileError } = await supabaseClient.from('profiles').insert({
+            await supabaseClient.from('profiles').insert({
                 id: data.user.id,
                 full_name: fullname,
-                role: role,
+                role,
                 school_section: schoolSection,
                 class_level: classLevel,
-                email: email,
+                email,
                 status: 'active'
             });
 
-            if (profileError) throw profileError;
-
-            messageEl.textContent = '✅ Registration successful! Please check your email for confirmation.';
             messageEl.style.color = "green";
-
-            // Redirect to login after success
-            setTimeout(() => {
-                window.location.href = "login.html";
-            }, 3000);
-
-        } catch (error) {
-            messageEl.textContent = error.message || 'Registration failed. Please try again.';
+            messageEl.textContent = "✅ Registration successful! Check your email.";
+            setTimeout(() => window.location.href = "login.html", 2500);
+        } catch (err) {
             messageEl.style.color = "red";
+            messageEl.textContent = err.message;
         }
     });
-}
-
-// Helper Functions for Registration Form
-function updateRoleOptions() {
-    const role = document.getElementById('role').value;
-    const sectionGroup = document.getElementById('sectionGroup');
-    const classGroup = document.getElementById('classGroup');
-    
-    if (sectionGroup) sectionGroup.style.display = role ? 'block' : 'none';
-    if (classGroup) classGroup.style.display = (role === 'student') ? 'block' : 'none';
-}
-
-function populateClassOptions() {
-    const section = document.getElementById('schoolSection').value;
-    const classSelect = document.getElementById('classLevel');
-    if (!classSelect) return;
-
-    classSelect.innerHTML = '<option value="">Select Class</option>';
-
-    if (section === 'primary') {
-        ["Pre-sch", "Primary 1", "Primary 2", "Primary 3", "Primary 4", "Primary 5"].forEach(c => 
-            classSelect.appendChild(new Option(c, c)));
-    } else if (section === 'secondary') {
-        ["JSS 1", "JSS 2", "JSS 3", "SSS 1", "SSS 2", "SSS 3"].forEach(c => 
-            classSelect.appendChild(new Option(c, c)));
-    }
 }
 
 // ==================== LOGIN ====================
