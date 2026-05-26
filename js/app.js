@@ -47,7 +47,7 @@ function changeSlide(n) {
 }
 setInterval(() => changeSlide(1), 5000);
 
-// ==================== REGISTRATION (Clean Version) ====================
+// ==================== REGISTRATION ====================
 if (document.getElementById('registerForm')) {
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -61,9 +61,11 @@ if (document.getElementById('registerForm')) {
 
         const messageEl = document.getElementById('registerMessage');
         messageEl.textContent = 'Processing...';
+        messageEl.style.color = "black";
 
         try {
-            const { data, error } = await supabaseClient.auth.signUp({
+            // 1. Sign up the user
+            const { data, error: signUpError } = await supabaseClient.auth.signUp({
                 email,
                 password,
                 options: {
@@ -71,24 +73,40 @@ if (document.getElementById('registerForm')) {
                 }
             });
 
-            if (error) throw error;
+            if (signUpError) throw signUpError;
 
-            await supabaseClient.from('profiles').insert({
-                id: data.user.id,
-                full_name: fullname,
-                role,
-                school_section: schoolSection,
-                class_level: classLevel,
-                email,
-                status: 'active'
-            });
+            // 2. Create profile (with better error handling)
+            if (data.user) {
+                const { error: profileError } = await supabaseClient
+                    .from('profiles')
+                    .insert({
+                        id: data.user.id,
+                        full_name: fullname,
+                        role: role,
+                        school_section: schoolSection,
+                        class_level: classLevel,
+                        email: email,
+                        status: 'active'
+                    });
+
+                if (profileError) {
+                    console.warn("Profile creation warning:", profileError);
+                    // Continue anyway - user might fix later
+                }
+            }
 
             messageEl.style.color = "green";
-            messageEl.textContent = "✅ Registration successful! Check your email.";
-            setTimeout(() => window.location.href = "login.html", 2500);
-        } catch (err) {
+            messageEl.textContent = "Registration successful! Please check your email to confirm.";
+
+            // Redirect to login after 2 seconds
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 2000);
+
+        } catch (error) {
+            console.error("Registration error:", error);
             messageEl.style.color = "red";
-            messageEl.textContent = err.message;
+            messageEl.textContent = error.message || "Registration failed. Please try again.";
         }
     });
 }
