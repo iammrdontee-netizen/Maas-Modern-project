@@ -47,14 +47,17 @@ function changeSlide(n) {
 }
 setInterval(() => changeSlide(1), 5000);
 
-// ==================== REGISTRATION (Updated for Custom SMTP) ====================
+// ==================== REGISTRATION SCRIPT (Isolated) ====================
 if (document.getElementById('registerForm')) {
+    
+    // Event listeners for role and section dropdowns
     const roleSelect = document.getElementById('role');
     const sectionSelect = document.getElementById('schoolSection');
 
     if (roleSelect) roleSelect.addEventListener('change', updateRoleOptions);
     if (sectionSelect) sectionSelect.addEventListener('change', populateClassOptions);
 
+    // Main Registration Handler
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -67,22 +70,23 @@ if (document.getElementById('registerForm')) {
 
         const messageEl = document.getElementById('registerMessage');
 
+        // Clear previous message
+        messageEl.textContent = '';
+
         try {
             const { data, error } = await supabaseClient.auth.signUp({
                 email: email,
                 password: password,
                 options: {
-                    emailRedirectTo: window.location.origin + '/login.html', // User returns here after clicking email link
-                    data: { 
-                        full_name: fullname 
-                    }
+                    emailRedirectTo: window.location.origin + '/login.html',
+                    data: { full_name: fullname }
                 }
             });
 
             if (error) throw error;
 
-            // Insert profile data
-            await supabaseClient.from('profiles').insert({
+            // Save user profile
+            const { error: profileError } = await supabaseClient.from('profiles').insert({
                 id: data.user.id,
                 full_name: fullname,
                 role: role,
@@ -92,17 +96,49 @@ if (document.getElementById('registerForm')) {
                 status: 'active'
             });
 
-            messageEl.textContent = 'Registration successful! Please check your email for confirmation.';
+            if (profileError) throw profileError;
+
+            messageEl.textContent = '✅ Registration successful! Please check your email for confirmation.';
             messageEl.style.color = "green";
-            
-            // Auto redirect after success
-            setTimeout(() => window.location.href = "login.html", 2500);
+
+            // Redirect to login after success
+            setTimeout(() => {
+                window.location.href = "login.html";
+            }, 3000);
+
         } catch (error) {
-            messageEl.textContent = error.message || 'Registration failed';
+            messageEl.textContent = error.message || 'Registration failed. Please try again.';
             messageEl.style.color = "red";
         }
     });
 }
+
+// Helper Functions for Registration Form
+function updateRoleOptions() {
+    const role = document.getElementById('role').value;
+    const sectionGroup = document.getElementById('sectionGroup');
+    const classGroup = document.getElementById('classGroup');
+    
+    if (sectionGroup) sectionGroup.style.display = role ? 'block' : 'none';
+    if (classGroup) classGroup.style.display = (role === 'student') ? 'block' : 'none';
+}
+
+function populateClassOptions() {
+    const section = document.getElementById('schoolSection').value;
+    const classSelect = document.getElementById('classLevel');
+    if (!classSelect) return;
+
+    classSelect.innerHTML = '<option value="">Select Class</option>';
+
+    if (section === 'primary') {
+        ["Pre-sch", "Primary 1", "Primary 2", "Primary 3", "Primary 4", "Primary 5"].forEach(c => 
+            classSelect.appendChild(new Option(c, c)));
+    } else if (section === 'secondary') {
+        ["JSS 1", "JSS 2", "JSS 3", "SSS 1", "SSS 2", "SSS 3"].forEach(c => 
+            classSelect.appendChild(new Option(c, c)));
+    }
+}
+
 // ==================== LOGIN ====================
 if (document.getElementById('loginForm')) {
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
