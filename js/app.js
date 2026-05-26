@@ -67,7 +67,13 @@ if (document.getElementById('registerForm')) {
         const messageEl = document.getElementById('registerMessage');
 
         try {
-            const { data, error } = await supabaseClient.auth.signUp({ email, password });
+           const { data, error } = await supabaseClient.auth.signUp({
+    email,
+    password,
+    options: {
+        emailRedirectTo: window.location.origin + '/index.html', // Optional
+    }
+});
             if (error) throw error;
 
             await supabaseClient.from('profiles').insert({
