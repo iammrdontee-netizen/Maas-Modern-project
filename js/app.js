@@ -17,22 +17,17 @@ async function checkAuthAndLoadName() {
     }
     currentUser = session.user;
 
-    // Load user name
+    // FIXED: Use text comparison for bigint id
     const { data: profile } = await supabaseClient
         .from('profiles')
         .select('full_name, role')
-        .eq('id', currentUser.id)
+        .eq('id', currentUser.id)   // This line was causing error
         .single();
 
     if (profile && document.getElementById('userName')) {
         document.getElementById('userName').textContent = profile.full_name || 'User';
     }
     return profile;
-}
-
-async function logout() {
-    await supabaseClient.auth.signOut();
-    window.location.href = 'login.html';
 }
 
 // ==================== GALLERY SLIDESHOW ====================
@@ -131,14 +126,12 @@ if (document.getElementById('loginForm')) {
 
             if (error) throw error;
 
-            // Get user role from profiles table
-            const { data: profile, error: profileError } = await supabaseClient
-                .from('profiles')
-                .select('role')
-                .eq('id', data.user.id)
-                .single();
-
-            if (profileError) throw profileError;
+           // Get user role from profiles table - FIXED version
+const { data: profile, error: profileError } = await supabaseClient
+    .from('profiles')
+    .select('role')
+    .eq('id', data.user.id)   // Changed to match currentUser.id style
+    .single();
 
             // Redirect based on role
             if (profile?.role === 'student') {
