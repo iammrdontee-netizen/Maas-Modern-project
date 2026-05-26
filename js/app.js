@@ -47,7 +47,7 @@ function changeSlide(n) {
 }
 setInterval(() => changeSlide(1), 5000);
 
-// ==================== REGISTRATION ====================
+// ==================== REGISTRATION (Updated for Custom SMTP) ====================
 if (document.getElementById('registerForm')) {
     const roleSelect = document.getElementById('role');
     const sectionSelect = document.getElementById('schoolSection');
@@ -57,6 +57,7 @@ if (document.getElementById('registerForm')) {
 
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        
         const fullname = document.getElementById('fullName').value.trim();
         const email = document.getElementById('regEmail').value.trim();
         const password = document.getElementById('regPassword').value;
@@ -67,15 +68,20 @@ if (document.getElementById('registerForm')) {
         const messageEl = document.getElementById('registerMessage');
 
         try {
-           const { data, error } = await supabaseClient.auth.signUp({
-    email,
-    password,
-    options: {
-        emailRedirectTo: window.location.origin + '/index.html', // Optional
-    }
-});
+            const { data, error } = await supabaseClient.auth.signUp({
+                email: email,
+                password: password,
+                options: {
+                    emailRedirectTo: window.location.origin + '/login.html', // User returns here after clicking email link
+                    data: { 
+                        full_name: fullname 
+                    }
+                }
+            });
+
             if (error) throw error;
 
+            // Insert profile data
             await supabaseClient.from('profiles').insert({
                 id: data.user.id,
                 full_name: fullname,
@@ -86,41 +92,17 @@ if (document.getElementById('registerForm')) {
                 status: 'active'
             });
 
-            messageEl.textContent = 'Registration successful! Please check your email and login.';
+            messageEl.textContent = 'Registration successful! Please check your email for confirmation.';
             messageEl.style.color = "green";
+            
+            // Auto redirect after success
             setTimeout(() => window.location.href = "login.html", 2500);
         } catch (error) {
-            messageEl.textContent = error.message;
+            messageEl.textContent = error.message || 'Registration failed';
             messageEl.style.color = "red";
         }
     });
 }
-
-function updateRoleOptions() {
-    const role = document.getElementById('role').value;
-    const sectionGroup = document.getElementById('sectionGroup');
-    const classGroup = document.getElementById('classGroup');
-    
-    if (sectionGroup) sectionGroup.style.display = role ? 'block' : 'none';
-    if (classGroup) classGroup.style.display = (role === 'student') ? 'block' : 'none';
-}
-
-function populateClassOptions() {
-    const section = document.getElementById('schoolSection').value;
-    const classSelect = document.getElementById('classLevel');
-    if (!classSelect) return;
-
-    classSelect.innerHTML = '<option value="">Select Class</option>';
-
-    if (section === 'primary') {
-        ["Pre-sch", "Primary 1","Primary 2","Primary 3","Primary 4","Primary 5"].forEach(c => 
-            classSelect.appendChild(new Option(c, c)));
-    } else if (section === 'secondary') {
-        ["JSS 1","JSS 2","JSS 3","SSS 1","SSS 2","SSS 3"].forEach(c => 
-            classSelect.appendChild(new Option(c, c)));
-    }
-}
-
 // ==================== LOGIN ====================
 if (document.getElementById('loginForm')) {
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
