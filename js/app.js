@@ -63,7 +63,7 @@ if (document.getElementById('registerForm')) {
         messageEl.style.color = "blue";
 
         try {
-            // 1. Create Auth user
+            // Step 1: Create Auth User
             const { data, error: authError } = await supabaseClient.auth.signUp({
                 email,
                 password,
@@ -74,40 +74,42 @@ if (document.getElementById('registerForm')) {
 
             if (authError) throw authError;
 
-            // 2. Insert profile (this was probably failing before)
-            if (data.user) {
-                const { error: profileError } = await supabaseClient
-                    .from('profiles')
-                    .insert({
-                        id: data.user.id,
-                        full_name: fullName,
-                        role: role,
-                        school_section: 'General'   // Change if needed
-                    });
+            if (!data.user) throw new Error("Failed to create user");
 
-                if (profileError) {
-                    console.warn("Profile insert warning:", profileError);
-                } else {
-                    console.log("✅ Profile created successfully");
-                }
+            console.log("✅ Auth user created:", data.user.id);
+
+            // Step 2: Insert Profile Row
+            const { error: profileError } = await supabaseClient
+                .from('profiles')
+                .insert({
+                    id: data.user.id,
+                    full_name: fullName,
+                    role: role,
+                    school_section: 'General'
+                });
+
+            if (profileError) {
+                console.error("❌ Profile insert failed:", profileError);
+                messageEl.style.color = "orange";
+                messageEl.textContent = "Account created but profile failed. Please contact admin.";
+            } else {
+                console.log("✅ Profile inserted successfully!");
+                messageEl.style.color = "green";
+                messageEl.textContent = "Registration successful! Redirecting to login...";
             }
 
-            messageEl.style.color = "green";
-            messageEl.textContent = "Registration successful! You can now login.";
-
-            // Auto redirect to login after 2 seconds
+            // Redirect to login after 2.5 seconds
             setTimeout(() => {
                 window.location.href = 'login.html';
-            }, 2000);
+            }, 2500);
 
         } catch (error) {
-            console.error("Register error:", error);
+            console.error("Registration error:", error);
             messageEl.style.color = "red";
-            messageEl.textContent = error.message || "Registration failed.";
+            messageEl.textContent = error.message || "Registration failed. Try again.";
         }
     });
 }
-
 // ==================== LOGIN SCRIPT ====================
 if (document.getElementById('loginForm')) {
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
