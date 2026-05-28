@@ -17,29 +17,37 @@ async function checkAuthAndLoadName() {
     }
     currentUser = session.user;
 
-    console.log("Checking profile for user:", currentUser.id);
+    console.log("🔍 Checking profile for user:", currentUser.id);
 
-    // FIXED: Use .filter() for bigint id column
-    const { data: profile, error } = await supabaseClient
+    // Try both ways (filter and eq) for safety
+    let { data: profile, error } = await supabaseClient
         .from('profiles')
         .select('full_name, role, school_section')
         .filter('id', 'eq', currentUser.id)
         .single();
 
-    if (error) {
-        console.warn("Profile fetch error:", error);
+    if (error || !profile) {
+        // Fallback try with .eq()
+        const fallback = await supabaseClient
+            .from('profiles')
+            .select('full_name, role, school_section')
+            .eq('id', currentUser.id)
+            .single();
+        
+        profile = fallback.data;
+        error = fallback.error;
     }
 
     if (profile && document.getElementById('userName')) {
         document.getElementById('userName').textContent = profile.full_name || currentUser.email;
         console.log("✅ Profile loaded:", profile);
     } else {
-        console.warn("❌ No profile found for user:", currentUser.id);
+        console.error("❌ STILL No profile found for user:", currentUser.id);
+        console.log("Current user object:", currentUser);
     }
 
     return profile;
 }
-
 // ==================== REGISTRATION ====================
 if (document.getElementById('registerForm')) {
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
@@ -123,15 +131,25 @@ if (document.getElementById('loginForm')) {
 
             if (error) throw error;
 
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 1500));
 
-            const { data: profile, error: profileError } = await supabaseClient
+            let { data: profile, error: profileError } = await supabaseClient
                 .from('profiles')
                 .select('role, full_name')
                 .filter('id', 'eq', data.user.id)
                 .single();
 
-            console.log("🔍 LOGIN DEBUG:", { 
+            // Fallback
+            if (profileError || !profile) {
+                const fallback = await supabaseClient
+                    .from('profiles')
+                    .select('role, full_name')
+                    .eq('id', data.user.id)
+                    .single();
+                profile = fallback.data;
+            }
+
+            console.log("🔍 FINAL LOGIN DEBUG:", { 
                 userId: data.user.id, 
                 role: profile?.role,
                 name: profile?.full_name 
@@ -288,7 +306,7 @@ window.logout = async function() {
 };
 // Make functions globally accessible
 window.logout = logout;
-window.changeSlide = changeSlide;
+//window.changeSlide = changeSlide;
 //window.updateRoleOptions = updateRoleOptions;
 window.populateClassOptions = populateClassOptions;
 window.showAdminTab = showAdminTab;
