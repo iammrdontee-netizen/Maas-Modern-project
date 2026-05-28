@@ -19,31 +19,22 @@ async function checkAuthAndLoadName() {
 
     console.log("🔍 Checking profile for user:", currentUser.id);
 
-    // Try both ways (filter and eq) for safety
-    let { data: profile, error } = await supabaseClient
+    // Use .filter() for bigint compatibility
+    const { data: profile, error } = await supabaseClient
         .from('profiles')
         .select('full_name, role, school_section')
         .filter('id', 'eq', currentUser.id)
         .single();
 
-    if (error || !profile) {
-        // Fallback try with .eq()
-        const fallback = await supabaseClient
-            .from('profiles')
-            .select('full_name, role, school_section')
-            .eq('id', currentUser.id)
-            .single();
-        
-        profile = fallback.data;
-        error = fallback.error;
+    if (error) {
+        console.error("❌ Profile fetch error:", error);
     }
 
     if (profile && document.getElementById('userName')) {
         document.getElementById('userName').textContent = profile.full_name || currentUser.email;
         console.log("✅ Profile loaded:", profile);
     } else {
-        console.error("❌ STILL No profile found for user:", currentUser.id);
-        console.log("Current user object:", currentUser);
+        console.warn("❌ No profile found for user:", currentUser.id);
     }
 
     return profile;
@@ -139,11 +130,11 @@ if (document.getElementById('loginForm')) {
 
             // Fallback
             if (profileError || !profile) {
-                const fallback = await supabaseClient
-                    .from('profiles')
-                    .select('role, full_name')
-                    .eq('id', data.user.id)
-                    .single();
+                const { data: profile, error: profileError } = await supabaseClient
+                .from('profiles')
+                .select('role, full_name')
+                .filter('id', 'eq', data.user.id)
+                .single();
                 profile = fallback.data;
             }
 
