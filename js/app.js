@@ -17,36 +17,28 @@ async function checkAuthAndLoadName() {
     }
     currentUser = session.user;
 
-    // FIXED: Use text casting because id is bigint
+    console.log("Checking profile for user:", currentUser.id);
+
+    // FIXED: Use .filter() for bigint id column
     const { data: profile, error } = await supabaseClient
         .from('profiles')
         .select('full_name, role, school_section')
-        .filter('id', 'eq', currentUser.id)   // Safer for bigint
+        .filter('id', 'eq', currentUser.id)
         .single();
 
-    if (error && error.code !== 'PGRST116') {
-        console.warn("Profile fetch warning:", error);
+    if (error) {
+        console.warn("Profile fetch error:", error);
     }
 
     if (profile && document.getElementById('userName')) {
-        document.getElementById('userName').textContent = profile.full_name || 'User';
-    } else if (!profile) {
-        console.warn("No profile found for user:", currentUser.id);
+        document.getElementById('userName').textContent = profile.full_name || currentUser.email;
+        console.log("✅ Profile loaded:", profile);
+    } else {
+        console.warn("❌ No profile found for user:", currentUser.id);
     }
 
     return profile;
 }
-// ==================== GALLERY SLIDESHOW ====================
-let currentSlide = 0;
-function changeSlide(n) {
-    const slides = document.getElementsByClassName("slide");
-    if (slides.length === 0) return;
-    
-    currentSlide = (currentSlide + n + slides.length) % slides.length;
-    Array.from(slides).forEach(slide => slide.classList.remove("active"));
-    slides[currentSlide].classList.add("active");
-}
-setInterval(() => changeSlide(1), 5000);
 
 // ==================== REGISTRATION ====================
 if (document.getElementById('registerForm')) {
@@ -133,7 +125,6 @@ if (document.getElementById('loginForm')) {
 
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            // Safe fetch with filter for bigint id
             const { data: profile, error: profileError } = await supabaseClient
                 .from('profiles')
                 .select('role, full_name')
@@ -141,11 +132,9 @@ if (document.getElementById('loginForm')) {
                 .single();
 
             console.log("🔍 LOGIN DEBUG:", { 
-                email,
-                userId: data.user.id,
+                userId: data.user.id, 
                 role: profile?.role,
-                fullName: profile?.full_name,
-                error: profileError
+                name: profile?.full_name 
             });
 
             if (profile?.role === 'teacher') {
@@ -159,7 +148,7 @@ if (document.getElementById('loginForm')) {
         } catch (error) {
             console.error("Login error:", error);
             messageEl.style.color = "red";
-            messageEl.textContent = error.message || "Login failed. Check your credentials.";
+            messageEl.textContent = error.message || "Login failed.";
         }
     });
 }
@@ -300,7 +289,7 @@ window.logout = async function() {
 // Make functions globally accessible
 window.logout = logout;
 window.changeSlide = changeSlide;
-window.updateRoleOptions = updateRoleOptions;
+//window.updateRoleOptions = updateRoleOptions;
 window.populateClassOptions = populateClassOptions;
 window.showAdminTab = showAdminTab;
 window.loadStudentDashboard = loadStudentDashboard;
