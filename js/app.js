@@ -20,10 +20,10 @@ async function checkAuthAndLoadName() {
     console.log("🔍 Checking profile for user:", currentUser.id);
 
     // Use .filter() for bigint compatibility
-    const { data: profile, error } = await supabaseClient
+   const { data: profile, error } = await supabaseClient
         .from('profiles')
         .select('full_name, role, school_section')
-        .filter('id', 'eq', currentUser.id)
+        .eq('id', currentUser.id)        // ← Use .eq() now
         .single();
 
     if (error) {
@@ -61,11 +61,8 @@ if (document.getElementById('registerForm')) {
             });
 
             if (authError) throw authError;
-            if (!data.user) throw new Error("Auth user creation failed");
+            if (!data.user) throw new Error("Auth failed");
 
-            console.log("✅ Auth user created. ID:", data.user.id);
-
-            // Insert Profile
             const { error: profileError } = await supabaseClient
                 .from('profiles')
                 .insert({
@@ -75,22 +72,15 @@ if (document.getElementById('registerForm')) {
                     school_section: 'General'
                 });
 
-            if (profileError) {
-                console.error("❌ DETAILED PROFILE INSERT ERROR:", profileError);
-                messageEl.style.color = "red";
-                messageEl.textContent = "Account created but profile failed. Check console for details.";
-            } else {
-                console.log("✅ Profile inserted successfully!");
-                messageEl.style.color = "green";
-                messageEl.textContent = "Registration successful! Redirecting to login...";
-            }
+            if (profileError) throw profileError;
 
-            setTimeout(() => {
-                window.location.href = 'login.html';
-            }, 2500);
+            messageEl.style.color = "green";
+            messageEl.textContent = "Registration successful! Redirecting...";
+
+            setTimeout(() => window.location.href = 'login.html', 2000);
 
         } catch (error) {
-            console.error("Registration error:", error);
+            console.error("Error:", error);
             messageEl.style.color = "red";
             messageEl.textContent = error.message || "Registration failed.";
         }
