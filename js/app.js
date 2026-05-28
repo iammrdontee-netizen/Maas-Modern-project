@@ -126,12 +126,19 @@ if (document.getElementById('loginForm')) {
 
             if (error) throw error;
 
-           // Get user role from profiles table - FIXED version
-const { data: profile, error: profileError } = await supabaseClient
-    .from('profiles')
-    .select('role')
-    .eq('id', data.user.id)   // Changed to match currentUser.id style
-    .single();
+            // Small delay to let session settle
+            await new Promise(resolve => setTimeout(resolve, 800));
+
+            // Get user role
+            const { data: profile, error: profileError } = await supabaseClient
+                .from('profiles')
+                .select('role')
+                .eq('id', data.user.id)
+                .single();
+
+            if (profileError && profileError.code !== 'PGRST116') { // PGRST116 = no rows
+                console.warn("Profile fetch warning:", profileError);
+            }
 
             // Redirect based on role
             if (profile?.role === 'student') {
@@ -141,10 +148,13 @@ const { data: profile, error: profileError } = await supabaseClient
             } else if (profile?.role === 'admin') {
                 window.location.href = 'admin.html';
             } else {
-                window.location.href = 'index.html';
+                // Fallback for users without profile or unknown role
+                console.warn("No role found, defaulting to student portal");
+                window.location.href = 'student.html'; // or show a message
             }
 
         } catch (error) {
+            console.error("Login error:", error);
             messageEl.style.color = "red";
             messageEl.textContent = error.message || "Login failed. Check your credentials.";
         }
