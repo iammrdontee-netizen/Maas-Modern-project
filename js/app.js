@@ -130,24 +130,31 @@ if (document.getElementById('loginForm')) {
 
             await new Promise(resolve => setTimeout(resolve, 1000));
 
+            // Get profile with more details for debugging
             const { data: profile, error: profileError } = await supabaseClient
                 .from('profiles')
-                .select('role')
+                .select('role, full_name')
                 .eq('id', data.user.id)
                 .single();
 
-            console.log("🔍 Login Debug:", { 
-                userId: data.user.id, 
-                role: profile?.role,
-                profileError 
+            console.log("🔍 LOGIN DEBUG:", { 
+                email: email,
+                userId: data.user.id,
+                roleFound: profile?.role,
+                fullName: profile?.full_name,
+                profileError: profileError 
             });
 
+            // Redirect based on role
             if (profile?.role === 'teacher') {
                 window.location.href = 'teacher.html';
             } else if (profile?.role === 'admin') {
                 window.location.href = 'admin.html';
+            } else if (profile?.role === 'student') {
+                window.location.href = 'student.html';
             } else {
-                window.location.href = 'student.html';   // default
+                console.warn("No valid role found → defaulting to student");
+                window.location.href = 'student.html';
             }
 
         } catch (error) {
