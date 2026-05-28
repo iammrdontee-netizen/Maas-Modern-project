@@ -48,66 +48,62 @@ async function checkAuthAndLoadName() {
 
     return profile;
 }
-// ==================== REGISTRATION ====================
+// ==================== REGISTER SCRIPT ====================
 if (document.getElementById('registerForm')) {
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const fullname = document.getElementById('fullName').value.trim();
+        const fullName = document.getElementById('fullName').value.trim();
         const email = document.getElementById('regEmail').value.trim();
         const password = document.getElementById('regPassword').value;
         const role = document.getElementById('role').value;
-        const schoolSection = document.getElementById('schoolSection').value;
-        const classLevel = document.getElementById('classLevel')?.value || null;
-
         const messageEl = document.getElementById('registerMessage');
-        messageEl.textContent = 'Processing...';
-        messageEl.style.color = "black";
+
+        messageEl.textContent = "Creating account...";
+        messageEl.style.color = "blue";
 
         try {
-            // 1. Sign up the user
-            const { data, error: signUpError } = await supabaseClient.auth.signUp({
+            // 1. Create Auth user
+            const { data, error: authError } = await supabaseClient.auth.signUp({
                 email,
                 password,
                 options: {
-                    emailRedirectTo: window.location.origin + '/login.html'
+                    data: { full_name: fullName }
                 }
             });
 
-            if (signUpError) throw signUpError;
+            if (authError) throw authError;
 
-            // 2. Create profile (with better error handling)
+            // 2. Insert profile (this was probably failing before)
             if (data.user) {
                 const { error: profileError } = await supabaseClient
                     .from('profiles')
                     .insert({
                         id: data.user.id,
-                        full_name: fullname,
+                        full_name: fullName,
                         role: role,
-                        school_section: schoolSection,
-                        class_level: classLevel,
-                        email: email,
-                        status: 'active'
+                        school_section: 'General'   // Change if needed
                     });
 
                 if (profileError) {
-                    console.warn("Profile creation warning:", profileError);
-                    // Continue anyway - user might fix later
+                    console.warn("Profile insert warning:", profileError);
+                } else {
+                    console.log("✅ Profile created successfully");
                 }
             }
 
             messageEl.style.color = "green";
-            messageEl.textContent = "Registration successful! Please check your email to confirm.";
+            messageEl.textContent = "Registration successful! You can now login.";
 
-            // Redirect to login after 2 seconds
+            // Auto redirect to login after 2 seconds
             setTimeout(() => {
                 window.location.href = 'login.html';
             }, 2000);
 
         } catch (error) {
-            console.error("Registration error:", error);
+            console.error("Register error:", error);
             messageEl.style.color = "red";
-            messageEl.textContent = error.message || "Registration failed. Please try again.";
+            messageEl.textContent = error.message || "Registration failed.";
         }
     });
 }
