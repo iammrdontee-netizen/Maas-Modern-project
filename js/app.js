@@ -54,22 +54,18 @@ if (document.getElementById('registerForm')) {
         messageEl.style.color = "blue";
 
         try {
-            // Step 1: Create Auth User
             const { data, error: authError } = await supabaseClient.auth.signUp({
                 email,
                 password,
-                options: {
-                    data: { full_name: fullName }
-                }
+                options: { data: { full_name: fullName } }
             });
 
             if (authError) throw authError;
+            if (!data.user) throw new Error("Auth user creation failed");
 
-            if (!data.user) throw new Error("Failed to create user");
+            console.log("✅ Auth user created. ID:", data.user.id);
 
-            console.log("✅ Auth user created:", data.user.id);
-
-            // Step 2: Insert Profile Row
+            // Insert Profile
             const { error: profileError } = await supabaseClient
                 .from('profiles')
                 .insert({
@@ -80,16 +76,15 @@ if (document.getElementById('registerForm')) {
                 });
 
             if (profileError) {
-                console.error("❌ Profile insert failed:", profileError);
-                messageEl.style.color = "orange";
-                messageEl.textContent = "Account created but profile failed. Please contact admin.";
+                console.error("❌ DETAILED PROFILE INSERT ERROR:", profileError);
+                messageEl.style.color = "red";
+                messageEl.textContent = "Account created but profile failed. Check console for details.";
             } else {
                 console.log("✅ Profile inserted successfully!");
                 messageEl.style.color = "green";
                 messageEl.textContent = "Registration successful! Redirecting to login...";
             }
 
-            // Redirect to login after 2.5 seconds
             setTimeout(() => {
                 window.location.href = 'login.html';
             }, 2500);
@@ -97,7 +92,7 @@ if (document.getElementById('registerForm')) {
         } catch (error) {
             console.error("Registration error:", error);
             messageEl.style.color = "red";
-            messageEl.textContent = error.message || "Registration failed. Try again.";
+            messageEl.textContent = error.message || "Registration failed.";
         }
     });
 }
