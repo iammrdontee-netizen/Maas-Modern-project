@@ -17,19 +17,22 @@ async function checkAuthAndLoadName() {
     }
     currentUser = session.user;
 
-    // FIXED: Use text comparison for bigint id
-    const { data: profile } = await supabaseClient
+    // Safe fetch for bigint id column
+    const { data: profile, error } = await supabaseClient
         .from('profiles')
-        .select('full_name, role')
-        .eq('id', currentUser.id)   // This line was causing error
+        .select('full_name, role, school_section')
+        .eq('id', currentUser.id)
         .single();
+
+    if (error && error.code !== 'PGRST116') {
+        console.warn("Profile fetch warning:", error);
+    }
 
     if (profile && document.getElementById('userName')) {
         document.getElementById('userName').textContent = profile.full_name || 'User';
     }
     return profile;
 }
-
 // ==================== GALLERY SLIDESHOW ====================
 let currentSlide = 0;
 function changeSlide(n) {
@@ -126,17 +129,17 @@ if (document.getElementById('loginForm')) {
 
             if (error) throw error;
 
-            // Small delay to let session settle
-            await new Promise(resolve => setTimeout(resolve, 800));
+            // Small delay to let session settle properly
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
-            // Get user role
+            // Get user role - Safe fetch for bigint id
             const { data: profile, error: profileError } = await supabaseClient
                 .from('profiles')
                 .select('role')
                 .eq('id', data.user.id)
                 .single();
 
-            if (profileError && profileError.code !== 'PGRST116') { // PGRST116 = no rows
+            if (profileError && profileError.code !== 'PGRST116') {
                 console.warn("Profile fetch warning:", profileError);
             }
 
@@ -148,15 +151,14 @@ if (document.getElementById('loginForm')) {
             } else if (profile?.role === 'admin') {
                 window.location.href = 'admin.html';
             } else {
-                // Fallback for users without profile or unknown role
                 console.warn("No role found, defaulting to student portal");
-                window.location.href = 'student.html'; // or show a message
+                window.location.href = 'student.html';
             }
 
         } catch (error) {
             console.error("Login error:", error);
             messageEl.style.color = "red";
-            messageEl.textContent = error.message || "Login failed. Check your credentials.";
+            messageEl.textContent = error.message || "Invalid email or password.";
         }
     });
 }
