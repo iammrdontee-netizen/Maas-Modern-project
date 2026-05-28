@@ -123,42 +123,37 @@ if (document.getElementById('loginForm')) {
 
         try {
             const { data, error } = await supabaseClient.auth.signInWithPassword({
-                email,
-                password
+                email, password
             });
 
             if (error) throw error;
 
-            // Small delay to let session settle properly
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            // Get user role - Safe fetch for bigint id
             const { data: profile, error: profileError } = await supabaseClient
                 .from('profiles')
                 .select('role')
                 .eq('id', data.user.id)
                 .single();
 
-            if (profileError && profileError.code !== 'PGRST116') {
-                console.warn("Profile fetch warning:", profileError);
-            }
+            console.log("🔍 Login Debug:", { 
+                userId: data.user.id, 
+                role: profile?.role,
+                profileError 
+            });
 
-            // Redirect based on role
-            if (profile?.role === 'student') {
-                window.location.href = 'student.html';
-            } else if (profile?.role === 'teacher') {
+            if (profile?.role === 'teacher') {
                 window.location.href = 'teacher.html';
             } else if (profile?.role === 'admin') {
                 window.location.href = 'admin.html';
             } else {
-                console.warn("No role found, defaulting to student portal");
-                window.location.href = 'student.html';
+                window.location.href = 'student.html';   // default
             }
 
         } catch (error) {
             console.error("Login error:", error);
             messageEl.style.color = "red";
-            messageEl.textContent = error.message || "Invalid email or password.";
+            messageEl.textContent = error.message || "Login failed.";
         }
     });
 }
@@ -282,7 +277,20 @@ function showAdminTab(tab) {
     if (tab === 'users') loadAllUsers();
     if (tab === 'overview') console.log("Overview tab loaded");
 }
+// ==================== LOGOUT ====================
+window.logout = async function() {
+    try {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) throw error;
 
+        // Clear local data
+        currentUser = null;
+        window.location.href = 'index.html';
+    } catch (error) {
+        console.error("Logout error:", error);
+        alert("Logout failed. Please try again.");
+    }
+};
 // Make functions globally accessible
 window.logout = logout;
 window.changeSlide = changeSlide;
