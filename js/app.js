@@ -399,6 +399,95 @@ async function loadMyStudents() {
         tbody.innerHTML = `<tr><td colspan="3">Error loading students</td></tr>`;
     }
 }
+// ==================== ADMIN DASHBOARD FUNCTIONS ====================
+
+let currentEditUserId = null;
+
+function showAdminTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+    document.getElementById(tab + 'Tab').style.display = 'block';
+    
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    if (tab === 'users') loadAllUsers();
+    if (tab === 'results') loadAllResults();
+}
+
+// Load All Users
+async function loadAllUsers() {
+    const tbody = document.getElementById('usersTableBody');
+    if (!tbody) return;
+
+    const { data, error } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .order('role');
+
+    tbody.innerHTML = data.map(user => `
+        <tr>
+            <td>${user.full_name}</td>
+            <td>${user.email}</td>
+            <td>${user.role}</td>
+            <td>${user.school_section || '-'}</td>
+            <td>${user.class_level || '-'}</td>
+            <td>${user.status}</td>
+            <td>
+                <button class="btn-small" onclick="editUser('${user.id}')">Edit</button>
+                <button class="btn-small" onclick="resetPassword('${user.email}')">Reset PW</button>
+                <button class="btn-small" onclick="suspendUser('${user.id}')">Suspend</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Load All Results
+async function loadAllResults() {
+    const tbody = document.getElementById('resultsTableBody');
+    if (!tbody) return;
+
+    const { data } = await supabaseClient
+        .from('results')
+        .select('*, profiles(full_name)')
+        .order('created_at', { ascending: false });
+
+    tbody.innerHTML = data.map(r => `
+        <tr>
+            <td>${r.profiles?.full_name || 'Unknown'}</td>
+            <td>${r.subject}</td>
+            <td>${r.score}</td>
+            <td>${r.grade}</td>
+            <td>${r.term}</td>
+            <td><button onclick="editResult('${r.id}')">Edit</button></td>
+        </tr>
+    `).join('');
+}
+
+// Placeholder functions (expand later)
+async function resetPassword(email) {
+    if (confirm(`Reset password for ${email}?`)) {
+        alert("Password reset link sent (implement full logic)");
+    }
+}
+
+function editUser(id) {
+    alert("Edit user functionality - coming soon");
+}
+
+function suspendUser(id) {
+    if (confirm("Suspend this user?")) {
+        alert("User suspended (implement update status)");
+    }
+}
+
+function editResult(id) {
+    alert("Edit result - coming soon");
+}
+
+function closeModal() {
+    document.getElementById('actionModal').style.display = 'none';
+}
+
 
 
    
@@ -417,3 +506,12 @@ window.showAdminTab = showAdminTab;
 window.loadStudentDashboard = loadStudentDashboard;
 window.loadTeacherDashboard = loadTeacherDashboard;
 window.loadAdminDashboard = loadAdminDashboard;
+window.showAdminTab = showAdminTab;
+window.loadAllUsers = loadAllUsers;
+window.loadAllResults = loadAllResults;
+window.resetPassword = resetPassword;
+window.editUser = editUser;
+window.suspendUser = suspendUser;
+window.editResult = editResult;
+window.closeModal = closeModal;
+
