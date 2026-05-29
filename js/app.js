@@ -426,47 +426,54 @@ async function loadMyStudents() {
         tbody.innerHTML = `<tr><td colspan="3">Error loading students</td></tr>`;
     }
 }
-// ==================== ADMIN DASHBOARD FUNCTIONS ====================
+// ==================== UPDATED ADMIN USERS LOADER ====================
+async function loadAllUsers() {
+    const tbody = document.getElementById('usersTableBody');
+    if (!tbody) return;
 
-let currentEditUserId = null;
+    try {
+        const { data, error } = await supabaseClient
+            .from('profiles')
+            .select('id, full_name, email, role, school_section, secondary_level, senior_stream, status')
+            .order('role');
 
+        if (error) throw error;
+
+        tbody.innerHTML = data && data.length > 0 
+            ? data.map(user => `
+                <tr>
+                    <td>${user.full_name || 'N/A'}</td>
+                    <td>${user.email || 'N/A'}</td>
+                    <td>${user.role || 'N/A'}</td>
+                    <td>${user.school_section || '-'}</td>
+                    <td>${user.secondary_level || '-'}</td>
+                    <td>${user.senior_stream || '-'}</td>
+                    <td>${user.status || 'active'}</td>
+                    <td>
+                        <button class="btn-small" onclick="editUser('${user.id}')">Edit</button>
+                        <button class="btn-small" onclick="resetPassword('${user.email}')">Reset PW</button>
+                    </td>
+                </tr>
+            `).join('')
+            : `<tr><td colspan="8">No users found</td></tr>`;
+    } catch (err) {
+        console.error(err);
+        tbody.innerHTML = `<tr><td colspan="8">Error loading users</td></tr>`;
+    }
+}
+
+// Tab Switching
 function showAdminTab(tab) {
     document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
     document.getElementById(tab + 'Tab').style.display = 'block';
     
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+    event.currentTarget.classList.add('active');
 
     if (tab === 'users') loadAllUsers();
-    if (tab === 'results') loadAllResults();
 }
 
-// Load All Users
-async function loadAllUsers() {
-    const tbody = document.getElementById('usersTableBody');
-    if (!tbody) return;
 
-    const { data, error } = await supabaseClient
-        .from('profiles')
-        .select('*')
-        .order('role');
-
-    tbody.innerHTML = data.map(user => `
-        <tr>
-            <td>${user.full_name}</td>
-            <td>${user.email}</td>
-            <td>${user.role}</td>
-            <td>${user.school_section || '-'}</td>
-            <td>${user.class_level || '-'}</td>
-            <td>${user.status}</td>
-            <td>
-                <button class="btn-small" onclick="editUser('${user.id}')">Edit</button>
-                <button class="btn-small" onclick="resetPassword('${user.email}')">Reset PW</button>
-                <button class="btn-small" onclick="suspendUser('${user.id}')">Suspend</button>
-            </td>
-        </tr>
-    `).join('');
-}
 
 // Load All Results
 async function loadAllResults() {
@@ -544,4 +551,5 @@ window.editUser = editUser;
 window.suspendUser = suspendUser;
 window.editResult = editResult;
 window.closeModal = closeModal;
+
 
