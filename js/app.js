@@ -47,52 +47,79 @@ async function checkAuthAndLoadName() {
 }
 
 
-// ==================== REGISTER SCRIPT ====================
+// ==================== IMPROVED REGISTRATION ====================
 if (document.getElementById('registerForm')) {
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const fullName = document.getElementById('fullName').value.trim();
+        const fullname = document.getElementById('fullName').value.trim();
         const email = document.getElementById('regEmail').value.trim();
         const password = document.getElementById('regPassword').value;
         const role = document.getElementById('role').value;
+        const schoolSection = document.getElementById('schoolSection').value;
+        const secondaryLevel = document.getElementById('secondaryLevel')?.value || null;
+        const seniorStream = document.getElementById('seniorStream')?.value || null;
+
         const messageEl = document.getElementById('registerMessage');
 
-        messageEl.textContent = "Creating account...";
-        messageEl.style.color = "blue";
-
         try {
-            const { data, error: authError } = await supabaseClient.auth.signUp({
+            const { data, error } = await supabaseClient.auth.signUp({
                 email,
                 password,
-                options: { data: { full_name: fullName } }
+                options: {
+                    emailRedirectTo: window.location.origin + '/login.html',
+                    data: { full_name: fullname }
+                }
             });
 
-            if (authError) throw authError;
+            if (error) throw error;
 
-            const { error: profileError } = await supabaseClient
-                .from('profiles')
-                .insert({
-                    id: data.user.id,
-                    full_name: fullName,
-                    role: role,
-                    school_section: 'General'
-                });
-
-            if (profileError) throw profileError;
+            await supabaseClient.from('profiles').insert({
+                id: data.user.id,
+                full_name: fullname,
+                role: role,
+                school_section: schoolSection,
+                secondary_level: secondaryLevel,
+                senior_stream: seniorStream,
+                email: email,
+                status: 'active'
+            });
 
             messageEl.style.color = "green";
-            messageEl.textContent = "✅ Registration successful! Redirecting...";
-
-            setTimeout(() => window.location.href = 'login.html', 2000);
-
+            messageEl.textContent = "✅ Registration successful! Please check your email.";
+            setTimeout(() => window.location.href = "login.html", 2500);
         } catch (error) {
-            console.error("Error:", error);
             messageEl.style.color = "red";
-            messageEl.textContent = error.message || "Registration failed.";
+            messageEl.textContent = error.message;
         }
     });
 }
+
+// Dynamic Form Options
+function updateRoleOptions() {
+    const role = document.getElementById('role').value;
+    const sectionGroup = document.getElementById('sectionGroup');
+    sectionGroup.style.display = role ? 'block' : 'none';
+}
+
+function populateSubOptions() {
+    const section = document.getElementById('schoolSection').value;
+    const secondarySubGroup = document.getElementById('secondarySubGroup');
+    
+    secondarySubGroup.style.display = (section === 'secondary') ? 'block' : 'none';
+    
+    // Reset senior stream when changing section
+    document.getElementById('seniorStreamGroup').style.display = 'none';
+}
+
+function populateSeniorStreams() {
+    const level = document.getElementById('secondaryLevel').value;
+    const seniorStreamGroup = document.getElementById('seniorStreamGroup');
+    seniorStreamGroup.style.display = (level === 'senior') ? 'block' : 'none';
+}
+
+
+
 // ==================== LOGIN SCRIPT ====================
 if (document.getElementById('loginForm')) {
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -499,6 +526,9 @@ window.checkAuthAndLoadName = checkAuthAndLoadName;
 window.uploadNote = uploadNote;
 window.loadAllUsers = loadAllUsers;
 window.loadMyStudents = loadMyStudents;
+window.updateRoleOptions = updateRoleOptions;
+window.populateSubOptions = populateSubOptions;
+window.populateSeniorStreams = populateSeniorStreams;
 //window.changeSlide = changeSlide;
 //window.updateRoleOptions = updateRoleOptions;
 //window.populateClassOptions = populateClassOptions;
