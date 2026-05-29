@@ -46,7 +46,7 @@ async function checkAuthAndLoadName() {
     }
 }
 
-// ==================== FIXED REGISTRATION WITH FULL OPTIONS ====================
+// ==================== FIXED REGISTRATION LOGIC ====================
 if (document.getElementById('registerForm')) {
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -65,9 +65,7 @@ if (document.getElementById('registerForm')) {
             const { data, error } = await supabaseClient.auth.signUp({
                 email,
                 password,
-                options: {
-                    emailRedirectTo: window.location.origin + '/login.html'
-                }
+                options: { emailRedirectTo: window.location.origin + '/login.html' }
             });
 
             if (error) throw error;
@@ -84,7 +82,7 @@ if (document.getElementById('registerForm')) {
             });
 
             messageEl.style.color = "green";
-            messageEl.textContent = "✅ Registration successful! Check your email.";
+            messageEl.textContent = "✅ Registration successful! Check your email for confirmation.";
             setTimeout(() => window.location.href = "login.html", 2500);
         } catch (error) {
             messageEl.style.color = "red";
@@ -93,15 +91,20 @@ if (document.getElementById('registerForm')) {
     });
 }
 
-// Dynamic Dropdown Functions
+// Dynamic Form Controls
 function updateRoleOptions() {
     const role = document.getElementById('role').value;
-    document.getElementById('sectionGroup').style.display = role ? 'block' : 'none';
+    document.getElementById('sectionGroup').style.display = (role === 'student' || role === 'teacher') ? 'block' : 'none';
 }
 
 function populateSubOptions() {
     const section = document.getElementById('schoolSection').value;
-    document.getElementById('secondarySubGroup').style.display = (section === 'secondary') ? 'block' : 'none';
+    const secondarySubGroup = document.getElementById('secondarySubGroup');
+    
+    // Show secondary options only for students
+    const role = document.getElementById('role').value;
+    secondarySubGroup.style.display = (section === 'secondary' && role === 'student') ? 'block' : 'none';
+    
     document.getElementById('seniorStreamGroup').style.display = 'none';
 }
 
