@@ -38,8 +38,10 @@ function populateSeniorStreams() {
     }
 }
 
-// ==================== REGISTER FORM LOGIC ====================
+// ==================== MAIN LOGIC ====================
 document.addEventListener('DOMContentLoaded', () => {
+
+    // Register Form
     const registerForm = document.getElementById('registerForm');
     if (registerForm) {
         const submitBtn = registerForm.querySelector('button[type="submit"]');
@@ -53,9 +55,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password) && /[!@#$%^&*(),.?":{}|<>]/.test(password);
         }
 
-        // Form Submission
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            // ... (same as before)
             const fullname = document.getElementById('fullName').value.trim();
             const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
@@ -80,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 messageEl.style.color = "green";
                 messageEl.textContent = "✅ Registration successful! Check your email.";
-                setTimeout(() => window.location.href = "login.html", 2000);
+                setTimeout(() => window.location.href = "login.html", 2500);
             } catch (error) {
                 messageEl.style.color = "red";
                 messageEl.textContent = error.message || "Registration failed.";
@@ -90,5 +92,42 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    console.log("✅ Register Page Loaded");
+    // ==================== LOGIN FORM ====================
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const messageEl = document.getElementById('loginMessage');
+
+            messageEl.textContent = "Logging in...";
+            messageEl.style.color = "blue";
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+
+                const { data: profile } = await supabaseClient
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', data.user.id)
+                    .single();
+
+                if (profile?.role === 'teacher') {
+                    window.location.href = 'teacher.html';
+                } else if (profile?.role === 'admin') {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'student.html';
+                }
+
+            } catch (error) {
+                messageEl.style.color = "red";
+                messageEl.textContent = error.message || "Invalid email or password.";
+            }
+        });
+    }
+
+    console.log("✅ Maas Modern App Loaded Successfully");
 });
