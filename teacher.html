@@ -3,72 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Portal Maas Modern</title>
-     <link rel="stylesheet" href="app.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;&display=swap" rel="stylesheet">
+    <title>Teacher Portal - Maas Modern</title>
+    <link rel="stylesheet" href="app.css">
+    <style>
+        .teacher-container { padding: 20px; }
+        .welcome-header { background: linear-gradient(135deg, #f093fb, #f5576c); color: white; padding: 30px; border-radius: 16px; margin-bottom: 30px; text-align: center; }
+        .tab-buttons { display: flex; gap: 12px; margin-bottom: 25px; flex-wrap: wrap; }
+        .tab-btn { padding: 14px 24px; background: #f1f1f1; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; }
+        .tab-btn.active { background: #e91e63; color: white; }
+        .card { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); margin-bottom: 25px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 14px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; }
+        .filter-row { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+    </style>
 </head>
-<body onload="loadTeacherDashboard()">
-  <header>
+<body>
+    <header>
         <div class="container">
-            <div class="logo">
-                <h2>Teacher Portal Maas Modern</h2>
-                <a href="index.html"><img src="images/logo.jpg" alt="Maas Modern Groups of Schools Logo" class="logo-image" width="100" height="100"></a>
-            </div>
+            <h2>Maas Modern</h2>
+            <p>Welcome, <strong id="userName">Loading...</strong></p>
             <button onclick="logout()" class="btn">Logout</button>
         </div>
     </header>
-    <section class="portal-content">
-        <div class="container">
-            <h2>Welcome, <strong id="userName">Loading...</strong></h2>
-            <h3>Add Student Results</h3>
-            <form id="resultForm">
-                <div class="form-group">
-                    <label>Select Student </label>
-                    <select id="filterSection" onchange="loadStudentsForTeacher()">
-                        <option value="">All Sections</option>
-                        <option value="primary">Primary School</option>
-                        <option value="secondary">Secondary School</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Select Student</label>
-                    <select id="studentSelect" required>
-                        <option value="">Select a student</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Subject</label>
-                    <input type="text" id="subject" placeholder="e.g. Digital Technology, Mathematic, English" required>
-                </div>
-                <div class="form-group">
-                    <label>Test Score</label>
-                    <input type="number" id="testScore" step="0.01" min="0" max="40">
-                </div>
-                <div class="form-group">
-                    <label>Exam Score</label>
-                    <input type="number" id="examScore" step="0.01" min="0" max="60">
-                </div>
-                <button type="submit" class="btn">Save Result</button>
-            </form>
-           <div class="card">
-    <h3>📤 Upload New Note</h3>
-    <form id="noteForm">
-        <input type="text" id="noteTitle" placeholder="Note Title" required><br><br>
-        <textarea id="noteContent" placeholder="Write your note here..." rows="5" required></textarea><br><br>
-        
-        <label>Attach File (Optional):</label>
-        <input type="file" id="noteFile"><br><br>
 
-        <button type="button" onclick="uploadNote()" class="btn">Upload Note</button>
-    </form>
-    <p id="noteMessage"></p>
-</div>
+    <div class="teacher-container container">
+        <div class="welcome-header">
+            <h1>Teacher Dashboard</h1>
         </div>
-    </section>
-     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/app.js"></script>
-   <script>
-        document.addEventListener('DOMContentLoaded', checkAuthAndLoadName);
+
+        <div class="tab-buttons">
+            <button class="tab-btn active" onclick="showTeacherTab('students')">👨‍🎓 My Students</button>
+            <button class="tab-btn" onclick="showTeacherTab('results')">📊 Input Results</button>
+            <button class="tab-btn" onclick="showTeacherTab('notes')">📝 Upload Notes</button>
+        </div>
+
+        <!-- Students Tab with Advanced Filter -->
+        <div id="studentsTab" class="tab-content">
+            <div class="card">
+                <h3>My Students</h3>
+                <div class="filter-row">
+                    <select id="filterLevel" onchange="filterStudents()">
+                        <option value="">All Levels</option>
+                    </select>
+                    <select id="filterStream" onchange="filterStudents()">
+                        <option value="">All Streams</option>
+                    </select>
+                </div>
+                <table id="studentsTable">
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Class/Level</th>
+                            <th>Stream</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Input Results Tab -->
+        <div id="resultsTab" class="tab-content" style="display:none;">
+            <div class="card">
+                <h3>Input / Update Student Result</h3>
+                <form id="resultForm">
+                    <div class="form-group">
+                        <label>Select Student</label>
+                        <select id="resultStudent" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Subject</label>
+                        <input type="text" id="resultSubject" required placeholder="e.g Mathematics">
+                    </div>
+                    <div class="form-group">
+                        <label>Score (0-100)</label>
+                        <input type="number" id="resultScore" min="0" max="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Grade</label>
+                        <input type="text" id="resultGrade" required placeholder="A, B, C, etc.">
+                    </div>
+                    <div class="form-group">
+                        <label>Term</label>
+                        <input type="text" id="resultTerm" required placeholder="1st Term 2026">
+                    </div>
+                    <button type="submit" class="btn">Save Result</button>
+                </form>
+                <p id="resultMessage"></p>
+            </div>
+        </div>
+
+        <!-- Notes Tab (kept simple for now) -->
+        <div id="notesTab" class="tab-content" style="display:none;">
+            <div class="card">
+                <h3>Upload Notes</h3>
+                <p>Notes upload form will be expanded soon.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/app.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuthAndLoadName();
+            showTeacherTab('students');
+        });
     </script>
 </body>
 </html>
