@@ -10,30 +10,43 @@ let currentUser = null;
 
 // ==================== UTILITY FUNCTIONS ====================
 async function checkAuthAndLoadName() {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (!session) {
-        window.location.href = 'login.html';
-        return;
+    try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
+        if (!session) {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        currentUser = session.user;
+
+        // Fetch profile
+        const { data: profile, error } = await supabaseClient
+            .from('profiles')
+            .select('full_name')
+            .eq('id', currentUser.id)
+            .single();
+
+        const nameEl = document.getElementById('userName');
+        
+        if (nameEl) {
+            if (profile && profile.full_name) {
+                nameEl.textContent = profile.full_name;
+            } else {
+                nameEl.textContent = currentUser.email || "User";   // Fallback
+            }
+        }
+
+        console.log("Profile fetched:", profile); // For debugging
+
+    } catch (error) {
+        console.error("Name load error:", error);
+        const nameEl = document.getElementById('userName');
+        if (nameEl) nameEl.textContent = "Error";
     }
-    currentUser = session.user;
-
-    const { data: profile, error } = await supabaseClient
-        .from('profiles')
-        .select('full_name, role')
-        .eq('id', currentUser.id)
-        .single();
-
-    if (error) {
-        console.error("Profile fetch error:", error);
-    }
-
-    const nameElement = document.getElementById('userName');
-    if (nameElement) {
-        nameElement.textContent = profile?.full_name || currentUser.email || 'Teacher';
-    }
-
-    console.log("✅ Name loaded:", profile?.full_name);
 }
+
+
 // ==================== REGISTER SCRIPT ====================
 if (document.getElementById('registerForm')) {
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
