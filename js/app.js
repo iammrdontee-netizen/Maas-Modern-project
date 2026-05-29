@@ -52,7 +52,7 @@ if (document.getElementById('registerForm')) {
     const submitBtn = registerForm.querySelector('button[type="submit"]');
     const messageEl = document.getElementById('registerMessage');
 
-    // ==================== VALIDATION HELPERS ====================
+    // Validation Helpers
     function isValidEmail(email) {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     }
@@ -102,7 +102,7 @@ if (document.getElementById('registerForm')) {
         if (submitBtn) submitBtn.disabled = !isValid;
     }
 
-    // ==================== REAL-TIME VALIDATION ====================
+    // Real-time Validation
     const emailField = document.getElementById('regEmail');
     const passwordField = document.getElementById('regPassword');
 
@@ -128,13 +128,12 @@ if (document.getElementById('registerForm')) {
         });
     }
 
-    // Required fields
     ['fullName', 'role'].forEach(id => {
         const field = document.getElementById(id);
         if (field) field.addEventListener('change', checkFormValidity);
     });
 
-    // ==================== DYNAMIC FILTERING (Student & Teacher) ====================
+    // Dynamic Filtering (Student vs Teacher)
     window.updateRoleOptions = function() {
         const role = document.getElementById('role').value;
         const sectionGroup = document.getElementById('sectionGroup');
@@ -143,7 +142,6 @@ if (document.getElementById('registerForm')) {
             sectionGroup.style.display = (role === 'student' || role === 'teacher') ? 'block' : 'none';
         }
 
-        // Reset sub options
         const secondarySubGroup = document.getElementById('secondarySubGroup');
         const seniorStreamGroup = document.getElementById('seniorStreamGroup');
         if (secondarySubGroup) secondarySubGroup.style.display = 'none';
@@ -169,9 +167,7 @@ if (document.getElementById('registerForm')) {
             } else if (section === 'junior-secondary' || section === 'senior-secondary') {
                 secondarySubGroup.style.display = 'block';
             }
-        } 
-        else if (role === 'teacher') {
-            // Teachers only use pre-school, primary, secondary
+        } else if (role === 'teacher') {
             secondarySubGroup.style.display = 'none';
         }
     };
@@ -184,7 +180,7 @@ if (document.getElementById('registerForm')) {
         }
     };
 
-    // ==================== FORM SUBMISSION ====================
+    // Form Submission
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -238,21 +234,17 @@ if (document.getElementById('registerForm')) {
             });
 
             messageEl.style.color = "green";
-            messageEl.textContent = "✅ Registration successful! Check your email to confirm your account.";
-            
-            setTimeout(() => {
-                window.location.href = "login.html";
-            }, 3000);
+            messageEl.textContent = "✅ Registration successful! Check your email to confirm.";
+            setTimeout(() => window.location.href = "login.html", 3000);
 
         } catch (error) {
             messageEl.style.color = "red";
-            messageEl.textContent = error.message || "Registration failed. Please try again.";
+            messageEl.textContent = error.message || "Registration failed.";
             submitBtn.disabled = false;
             submitBtn.textContent = "Register";
         }
     });
 }
-
 // ==================== LOGIN SCRIPT ====================
 if (document.getElementById('loginForm')) {
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
