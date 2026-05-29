@@ -7,34 +7,21 @@
     <link rel="stylesheet" href="app.css">
     <style>
         .form-group { margin-bottom: 18px; }
-        .sub-options { margin-left: 20px; margin-top: 10px; display: none; }
-        .welcome-header {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            padding: 25px;
-            border-radius: 12px;
-            text-align: center;
-            margin-bottom: 30px;
-        }
+        .sub-options { margin-left: 20px; margin-top: 8px; display: none; }
     </style>
 </head>
 <body>
     <header>
         <div class="container">
             <h2>Maas Modern</h2>
-            <nav>
-                <a href="index.html">Home</a> | 
-                <a href="login.html">Login</a>
-            </nav>
+            <nav><a href="index.html">Home</a> | <a href="login.html">Login</a></nav>
         </div>
     </header>
 
     <div class="container">
-        <div class="welcome-header">
-            <h1>New Member Registration</h1>
-        </div>
-
         <div class="login-box">
+            <h2 style="text-align:center; margin-bottom:25px;">New Member Registration</h2>
+            
             <form id="registerForm">
                 <div class="form-group">
                     <label for="fullName">Full Name</label>
@@ -61,7 +48,7 @@
                     </select>
                 </div>
 
-                <!-- School Section -->
+                <!-- Section -->
                 <div class="form-group" id="sectionGroup" style="display:none;">
                     <label for="schoolSection">School Section</label>
                     <select id="schoolSection" onchange="populateSubOptions()">
@@ -72,7 +59,7 @@
                     </select>
                 </div>
 
-                <!-- Sub Options for Secondary -->
+                <!-- Secondary Sub Options -->
                 <div class="form-group sub-options" id="secondarySubGroup" style="display:none;">
                     <label for="secondaryLevel">Secondary Level</label>
                     <select id="secondaryLevel" onchange="populateSeniorStreams()">
@@ -82,9 +69,9 @@
                     </select>
                 </div>
 
-                <!-- Senior Secondary Streams -->
+                <!-- Senior Streams -->
                 <div class="form-group sub-options" id="seniorStreamGroup" style="display:none;">
-                    <label for="seniorStream">Senior Secondary Stream</label>
+                    <label for="seniorStream">Department / Stream</label>
                     <select id="seniorStream">
                         <option value="">Select Stream</option>
                         <option value="science">Science</option>
@@ -93,10 +80,10 @@
                     </select>
                 </div>
 
-                <button type="submit" class="btn" style="width:100%; margin-top:20px;">Register Now</button>
+                <button type="submit" class="btn" style="width:100%; margin-top:25px;">Register Now</button>
             </form>
 
-            <p id="registerMessage" style="text-align:center; margin-top:15px; font-weight:500;"></p>
+            <p id="registerMessage" style="text-align:center; margin-top:20px; font-weight:500;"></p>
         </div>
     </div>
 
