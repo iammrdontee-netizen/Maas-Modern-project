@@ -18,11 +18,11 @@
         .tab-buttons {
             display: flex;
             gap: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             flex-wrap: wrap;
         }
         .tab-btn {
-            padding: 12px 20px;
+            padding: 12px 24px;
             background: #f1f1f1;
             border: none;
             border-radius: 8px;
@@ -37,40 +37,23 @@
             background: white;
             border-radius: 12px;
             padding: 25px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             margin-bottom: 25px;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
         }
         th, td {
-            padding: 12px;
+            padding: 12px 10px;
             text-align: left;
             border-bottom: 1px solid #eee;
         }
-        th { background: #f8f9fa; }
+        th { background: #f8f9fa; font-weight: 600; }
         .btn-small {
             padding: 6px 12px;
-            font-size: 14px;
+            font-size: 13px;
             margin: 2px;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 1000;
-        }
-        .modal-content {
-            background: white;
-            margin: 5% auto;
-            padding: 25px;
-            width: 90%;
-            max-width: 500px;
-            border-radius: 12px;
         }
     </style>
 </head>
@@ -96,15 +79,16 @@
         <!-- Users Tab -->
         <div id="usersTab" class="tab-content">
             <div class="card">
-                <h3>All Registered Users</h3>
+                <h3>All Registered Users & Students</h3>
                 <table id="usersTable">
                     <thead>
                         <tr>
-                            <th>Name</th>
+                            <th>Full Name</th>
                             <th>Email</th>
                             <th>Role</th>
                             <th>Section</th>
-                            <th>Class</th>
+                            <th>Level</th>
+                            <th>Stream</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -114,33 +98,12 @@
             </div>
         </div>
 
-        <!-- Results Tab -->
+        <!-- Results Tab (Placeholder for now) -->
         <div id="resultsTab" class="tab-content" style="display:none;">
             <div class="card">
                 <h3>All Student Results</h3>
-                <table id="resultsTable">
-                    <thead>
-                        <tr>
-                            <th>Student</th>
-                            <th>Subject</th>
-                            <th>Score</th>
-                            <th>Grade</th>
-                            <th>Term</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="resultsTableBody"></tbody>
-                </table>
+                <p>Results management coming soon...</p>
             </div>
-        </div>
-    </div>
-
-    <!-- Modal for Edit/Reset -->
-    <div id="actionModal" class="modal">
-        <div class="modal-content">
-            <h3 id="modalTitle"></h3>
-            <div id="modalBody"></div>
-            <button onclick="closeModal()" style="margin-top:15px;">Close</button>
         </div>
     </div>
 
