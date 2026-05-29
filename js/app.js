@@ -342,13 +342,74 @@ async function uploadNote() {
         messageEl.textContent = "Upload failed: " + error.message;
     }
 }
-    
+    // ==================== LOAD USERS & STUDENTS (Safe Addition) ====================
+
+async function loadAllUsers() {
+    const tbody = document.getElementById('usersTableBody');
+    if (!tbody) return;
+
+    try {
+        const { data, error } = await supabaseClient
+            .from('profiles')
+            .select('full_name, email, role, school_section, class_level')
+            .order('role', { ascending: true });
+
+        if (error) throw error;
+
+        tbody.innerHTML = data && data.length > 0 
+            ? data.map(user => `
+                <tr>
+                    <td>${user.full_name || 'N/A'}</td>
+                    <td>${user.email || 'N/A'}</td>
+                    <td>${user.role || 'N/A'}</td>
+                    <td>${user.school_section || 'N/A'}</td>
+                    <td>${user.class_level || 'N/A'}</td>
+                </tr>
+            `).join('')
+            : `<tr><td colspan="5">No users found yet</td></tr>`;
+    } catch (err) {
+        console.error(err);
+        tbody.innerHTML = `<tr><td colspan="5">Error loading users</td></tr>`;
+    }
+}
+
+async function loadMyStudents() {
+    const tbody = document.getElementById('studentsTableBody');
+    if (!tbody) return;
+
+    try {
+        const { data, error } = await supabaseClient
+            .from('profiles')
+            .select('full_name, class_level')
+            .eq('role', 'student');
+
+        if (error) throw error;
+
+        tbody.innerHTML = data && data.length > 0 
+            ? data.map(student => `
+                <tr>
+                    <td>${student.full_name}</td>
+                    <td>${student.class_level || 'N/A'}</td>
+                    <td><button>View</button></td>
+                </tr>
+            `).join('')
+            : `<tr><td colspan="3">No students registered yet</td></tr>`;
+    } catch (err) {
+        console.error(err);
+        tbody.innerHTML = `<tr><td colspan="3">Error loading students</td></tr>`;
+    }
+}
+
+
+   
 };
 
 // Make functions globally accessible
 window.logout = logout;
 window.checkAuthAndLoadName = checkAuthAndLoadName;
 window.uploadNote = uploadNote;
+window.loadAllUsers = loadAllUsers;
+window.loadMyStudents = loadMyStudents;
 //window.changeSlide = changeSlide;
 //window.updateRoleOptions = updateRoleOptions;
 //window.populateClassOptions = populateClassOptions;
