@@ -13,31 +13,26 @@ async function checkAuthAndLoadName() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) {
         window.location.href = 'login.html';
-        return null;
+        return;
     }
     currentUser = session.user;
 
-    console.log("🔍 Checking profile for user:", currentUser.id);
-
-    // Use .filter() for bigint compatibility
-   const { data: profile, error } = await supabaseClient
+    const { data: profile, error } = await supabaseClient
         .from('profiles')
-        .select('full_name, role, school_section')
-        .eq('id', currentUser.id)        // ← Use .eq() now
+        .select('full_name, role')
+        .eq('id', currentUser.id)
         .single();
 
     if (error) {
-        console.error("❌ Profile fetch error:", error);
+        console.error("Profile fetch error:", error);
     }
 
-    if (profile && document.getElementById('userName')) {
-        document.getElementById('userName').textContent = profile.full_name || currentUser.email;
-        console.log("✅ Profile loaded:", profile);
-    } else {
-        console.warn("❌ No profile found for user:", currentUser.id);
+    const nameElement = document.getElementById('userName');
+    if (nameElement) {
+        nameElement.textContent = profile?.full_name || currentUser.email || 'Teacher';
     }
 
-    return profile;
+    console.log("✅ Name loaded:", profile?.full_name);
 }
 // ==================== REGISTER SCRIPT ====================
 if (document.getElementById('registerForm')) {
