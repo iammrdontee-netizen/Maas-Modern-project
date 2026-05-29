@@ -274,6 +274,7 @@ window.logout = async function() {
 };
 // Make functions globally accessible
 window.logout = logout;
+window.checkAuthAndLoadName = checkAuthAndLoadName;
 //window.changeSlide = changeSlide;
 //window.updateRoleOptions = updateRoleOptions;
 //window.populateClassOptions = populateClassOptions;
