@@ -15,45 +15,22 @@
             margin-bottom: 30px;
             text-align: center;
         }
-        .tab-buttons {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
+        .tab-buttons { display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
+        .tab-btn { padding: 12px 24px; background: #f1f1f1; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .tab-btn.active { background: #667eea; color: white; }
+        .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin-bottom: 25px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; }
+        .btn-small { padding: 6px 12px; font-size: 13px; margin: 2px; }
+        .btn-danger { background: #e74c3c; color: white; }
+        
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center;
         }
-        .tab-btn {
-            padding: 12px 24px;
-            background: #f1f1f1;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-        .tab-btn.active {
-            background: #667eea;
-            color: white;
-        }
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            margin-bottom: 25px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 12px 10px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-        th { background: #f8f9fa; font-weight: 600; }
-        .btn-small {
-            padding: 6px 12px;
-            font-size: 13px;
-            margin: 2px;
+        .modal-content {
+            background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 500px;
         }
     </style>
 </head>
@@ -73,13 +50,11 @@
 
         <div class="tab-buttons">
             <button class="tab-btn active" onclick="showAdminTab('users')">Users Management</button>
-            <button class="tab-btn" onclick="showAdminTab('results')">Results Management</button>
         </div>
 
-        <!-- Users Tab -->
         <div id="usersTab" class="tab-content">
             <div class="card">
-                <h3>All Registered Users & Students</h3>
+                <h3>All Registered Users</h3>
                 <table id="usersTable">
                     <thead>
                         <tr>
@@ -97,13 +72,32 @@
                 </table>
             </div>
         </div>
+    </div>
 
-        <!-- Results Tab (Placeholder for now) -->
-        <div id="resultsTab" class="tab-content" style="display:none;">
-            <div class="card">
-                <h3>All Student Results</h3>
-                <p>Results management coming soon...</p>
-            </div>
+    <!-- Edit User Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h3>Edit User</h3>
+            <form id="editUserForm">
+                <input type="hidden" id="editUserId">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="editFullName" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="editEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="editStatus">
+                        <option value="active">Active</option>
+                        <option value="suspended">Suspended</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn">Save Changes</button>
+                <button type="button" onclick="closeModal()" style="margin-left:10px;">Cancel</button>
+            </form>
         </div>
     </div>
 
