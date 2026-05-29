@@ -5,7 +5,10 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const { createClient } = supabase;
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ==================== REGISTER FUNCTIONS ====================
+// ==================== GLOBAL VARIABLES ====================
+let currentUser = null;
+
+// ==================== REGISTER HELPER FUNCTIONS ====================
 function updateRoleOptions() {
     const role = document.getElementById('role').value;
     const sectionGroup = document.getElementById('sectionGroup');
@@ -34,9 +37,10 @@ function populateSeniorStreams() {
     if (seniorStreamGroup) seniorStreamGroup.style.display = (level === 'senior') ? 'block' : 'none';
 }
 
-// ==================== MAIN LOGIC ====================
+// ==================== MAIN APP LOGIC ====================
 document.addEventListener('DOMContentLoaded', () => {
 
+    // ==================== REGISTER FORM ====================
     const registerForm = document.getElementById('registerForm');
     if (registerForm) {
         const submitBtn = registerForm.querySelector('button[type="submit"]');
@@ -47,30 +51,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
             const role = document.getElementById('role').value;
-
-            const isValid = fullname.length > 2 && email.length > 5 && password.length >= 6 && role !== '';
-            submitBtn.disabled = !isValid;
+            submitBtn.disabled = !(fullname.length > 2 && email.length > 5 && password.length >= 6 && role);
         }
 
-        // Real-time check
         ['fullName', 'regEmail', 'regPassword', 'role'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('input', checkFormValidity);
         });
 
-        // Form Submit
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const fullname = document.getElementById('fullName').value.trim();
             const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
             const role = document.getElementById('role').value;
-
-            if (!fullname || !email || !password || !role) {
-                messageEl.style.color = "red";
-                messageEl.textContent = "Please fill all fields.";
-                return;
-            }
 
             submitBtn.disabled = true;
             submitBtn.textContent = "Creating account...";
@@ -103,12 +97,52 @@ document.addEventListener('DOMContentLoaded', () => {
                 submitBtn.textContent = "Register";
             }
         });
+    }
 
-        // Initial check
-        checkFormValidity();
+    // ==================== LOGIN FORM ====================
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        const messageEl = document.getElementById('loginMessage');
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            messageEl.textContent = "Logging in...";
+            messageEl.style.color = "blue";
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email,
+                    password
+                });
+
+                if (error) throw error;
+
+                currentUser = data.user;
+
+                // Get user role
+                const { data: profile } = await supabaseClient
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', currentUser.id)
+                    .single();
+
+                if (profile?.role === 'teacher') {
+                    window.location.href = 'teacher.html';
+                } else if (profile?.role === 'admin') {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'student.html';
+                }
+
+            } catch (error) {
+                messageEl.style.color = "red";
+                messageEl.textContent = error.message || "Invalid email or password. Please try again.";
+            }
+        });
     }
 
     console.log("✅ Maas Modern App Loaded Successfully");
 });
-
-
