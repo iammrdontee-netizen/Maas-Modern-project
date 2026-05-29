@@ -284,10 +284,71 @@ window.logout = async function() {
         console.error("Logout error:", error);
         alert("Logout failed. Please try again.");
     }
+    // ==================== NOTES UPLOAD (Fixed) ====================
+async function uploadNote() {
+    const title = document.getElementById('noteTitle')?.value.trim();
+    const content = document.getElementById('noteContent')?.value.trim();
+    const fileInput = document.getElementById('noteFile');
+    const messageEl = document.getElementById('noteMessage');
+
+    if (!title || !content) {
+        if (messageEl) messageEl.textContent = "Title and content are required!";
+        return;
+    }
+
+    messageEl.textContent = "Uploading...";
+
+    try {
+        let fileUrl = null;
+
+        // Handle file upload if selected
+        if (fileInput && fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            const fileExt = file.name.split('.').pop();
+            const fileName = `\( {Date.now()}. \){fileExt}`;
+
+            const { data, error } = await supabaseClient.storage
+                .from('notes')
+                .upload(fileName, file);
+
+            if (error) throw error;
+
+            fileUrl = supabaseClient.storage.from('notes').getPublicUrl(fileName).data.publicUrl;
+        }
+
+        // Save note to database
+        const { error: dbError } = await supabaseClient
+            .from('notes')
+            .insert({
+                title: title,
+                content: content,
+                file_url: fileUrl,
+                uploaded_by: currentUser?.id,
+                target_class: document.getElementById('targetClass')?.value || null,
+                created_at: new Date()
+            });
+
+        if (dbError) throw dbError;
+
+        messageEl.style.color = "green";
+        messageEl.textContent = "✅ Note uploaded successfully!";
+
+        // Clear form
+        if (document.getElementById('noteForm')) document.getElementById('noteForm').reset();
+
+    } catch (error) {
+        console.error(error);
+        messageEl.style.color = "red";
+        messageEl.textContent = "Upload failed: " + error.message;
+    }
+}
+    
 };
+
 // Make functions globally accessible
 window.logout = logout;
 window.checkAuthAndLoadName = checkAuthAndLoadName;
+window.uploadNote = uploadNote;
 //window.changeSlide = changeSlide;
 //window.updateRoleOptions = updateRoleOptions;
 //window.populateClassOptions = populateClassOptions;
