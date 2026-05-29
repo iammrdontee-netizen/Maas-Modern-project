@@ -7,23 +7,14 @@
     <link rel="stylesheet" href="app.css">
     <style>
         .form-group { margin-bottom: 18px; }
-        .section-options {
-            display: none;
-            margin-top: 10px;
-        }
-        .school-section-btn {
-            padding: 12px 20px;
-            margin: 5px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            background: white;
-            cursor: pointer;
-            font-weight: 500;
-        }
-        .school-section-btn.active {
-            background: #667eea;
+        .sub-options { margin-left: 20px; margin-top: 10px; display: none; }
+        .welcome-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
-            border-color: #667eea;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 30px;
         }
     </style>
 </head>
@@ -32,68 +23,82 @@
         <div class="container">
             <h2>Maas Modern</h2>
             <nav>
-                <a href="index.html">Home</a>
+                <a href="index.html">Home</a> | 
                 <a href="login.html">Login</a>
             </nav>
         </div>
     </header>
 
-    <section class="login-section">
-        <div class="container">
-            <div class="login-box">
-                <h2 style="text-align:center; margin-bottom:30px;">Register New User</h2>
-                
-                <form id="registerForm">
-                    <div class="form-group">
-                        <label>Full Name</label>
-                        <input type="text" id="fullName" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Email Address</label>
-                        <input type="email" id="regEmail" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" id="regPassword" required minlength="6">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Role</label>
-                        <select id="role" required onchange="updateRoleOptions()">
-                            <option value="">Select Role</option>
-                            <option value="student">Student</option>
-                            <option value="teacher">Teacher</option>
-                            <option value="admin">Admin</option>
-                        </select>
-                    </div>
-
-                    <!-- School Section Selection -->
-                    <div class="form-group" id="sectionGroup" style="display:none;">
-                        <label>School Section</label>
-                        <div id="sectionButtons" class="section-options">
-                            <button type="button" class="school-section-btn" onclick="selectSection('pre-school')">Pre-School</button>
-                            <button type="button" class="school-section-btn" onclick="selectSection('primary')">Primary</button>
-                            <button type="button" class="school-section-btn" onclick="selectSection('junior-secondary')">Junior Secondary (JSS)</button>
-                            <button type="button" class="school-section-btn" onclick="selectSection('senior-secondary')">Senior Secondary (SSS)</button>
-                        </div>
-                        <input type="hidden" id="schoolSection">
-                    </div>
-
-                    <!-- Class Level (for students only) -->
-                    <div class="form-group" id="classGroup" style="display:none;">
-                        <label>Class Level</label>
-                        <select id="classLevel"></select>
-                    </div>
-
-                    <button type="submit" class="btn" style="width:100%; margin-top:20px;">Register</button>
-                </form>
-
-                <p id="registerMessage" style="text-align:center; margin-top:15px; font-weight:500;"></p>
-            </div>
+    <div class="container">
+        <div class="welcome-header">
+            <h1>New Member Registration</h1>
         </div>
-    </section>
+
+        <div class="login-box">
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="fullName">Full Name</label>
+                    <input type="text" id="fullName" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="regEmail">Email Address</label>
+                    <input type="email" id="regEmail" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="regPassword">Password</label>
+                    <input type="password" id="regPassword" required minlength="6">
+                </div>
+
+                <div class="form-group">
+                    <label for="role">Role</label>
+                    <select id="role" required onchange="updateRoleOptions()">
+                        <option value="">Select Role</option>
+                        <option value="student">Student</option>
+                        <option value="teacher">Teacher</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+
+                <!-- School Section -->
+                <div class="form-group" id="sectionGroup" style="display:none;">
+                    <label for="schoolSection">School Section</label>
+                    <select id="schoolSection" onchange="populateSubOptions()">
+                        <option value="">Select Section</option>
+                        <option value="pre-school">Pre-School</option>
+                        <option value="primary">Primary</option>
+                        <option value="secondary">Secondary</option>
+                    </select>
+                </div>
+
+                <!-- Sub Options for Secondary -->
+                <div class="form-group sub-options" id="secondarySubGroup" style="display:none;">
+                    <label for="secondaryLevel">Secondary Level</label>
+                    <select id="secondaryLevel" onchange="populateSeniorStreams()">
+                        <option value="">Select Level</option>
+                        <option value="junior">Junior Secondary (JSS)</option>
+                        <option value="senior">Senior Secondary (SSS)</option>
+                    </select>
+                </div>
+
+                <!-- Senior Secondary Streams -->
+                <div class="form-group sub-options" id="seniorStreamGroup" style="display:none;">
+                    <label for="seniorStream">Senior Secondary Stream</label>
+                    <select id="seniorStream">
+                        <option value="">Select Stream</option>
+                        <option value="science">Science</option>
+                        <option value="commercial">Commercial</option>
+                        <option value="arts">Arts</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn" style="width:100%; margin-top:20px;">Register Now</button>
+            </form>
+
+            <p id="registerMessage" style="text-align:center; margin-top:15px; font-weight:500;"></p>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/app.js"></script>
