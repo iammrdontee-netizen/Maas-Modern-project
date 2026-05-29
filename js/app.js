@@ -46,8 +46,7 @@ async function checkAuthAndLoadName() {
     }
 }
 
-
-// ==================== IMPROVED REGISTRATION ====================
+// ==================== FIXED REGISTRATION WITH FULL OPTIONS ====================
 if (document.getElementById('registerForm')) {
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -67,8 +66,7 @@ if (document.getElementById('registerForm')) {
                 email,
                 password,
                 options: {
-                    emailRedirectTo: window.location.origin + '/login.html',
-                    data: { full_name: fullname }
+                    emailRedirectTo: window.location.origin + '/login.html'
                 }
             });
 
@@ -86,7 +84,7 @@ if (document.getElementById('registerForm')) {
             });
 
             messageEl.style.color = "green";
-            messageEl.textContent = "✅ Registration successful! Please check your email.";
+            messageEl.textContent = "✅ Registration successful! Check your email.";
             setTimeout(() => window.location.href = "login.html", 2500);
         } catch (error) {
             messageEl.style.color = "red";
@@ -95,27 +93,21 @@ if (document.getElementById('registerForm')) {
     });
 }
 
-// Dynamic Form Options
+// Dynamic Dropdown Functions
 function updateRoleOptions() {
     const role = document.getElementById('role').value;
-    const sectionGroup = document.getElementById('sectionGroup');
-    sectionGroup.style.display = role ? 'block' : 'none';
+    document.getElementById('sectionGroup').style.display = role ? 'block' : 'none';
 }
 
 function populateSubOptions() {
     const section = document.getElementById('schoolSection').value;
-    const secondarySubGroup = document.getElementById('secondarySubGroup');
-    
-    secondarySubGroup.style.display = (section === 'secondary') ? 'block' : 'none';
-    
-    // Reset senior stream when changing section
+    document.getElementById('secondarySubGroup').style.display = (section === 'secondary') ? 'block' : 'none';
     document.getElementById('seniorStreamGroup').style.display = 'none';
 }
 
 function populateSeniorStreams() {
     const level = document.getElementById('secondaryLevel').value;
-    const seniorStreamGroup = document.getElementById('seniorStreamGroup');
-    seniorStreamGroup.style.display = (level === 'senior') ? 'block' : 'none';
+    document.getElementById('seniorStreamGroup').style.display = (level === 'senior') ? 'block' : 'none';
 }
 
 
@@ -714,6 +706,7 @@ window.showAdminTab = showAdminTab;
 window.showStudentTab = showStudentTab;
 window.loadStudentResults = loadStudentResults;
 window.loadStudentNotes = loadStudentNotes;
+
 
 
 
