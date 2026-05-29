@@ -259,64 +259,106 @@ async function loadTeacherDashboard() {
     loadTeacherNotes();
 }
 
+// ==================== EXPANDED TEACHER FUNCTIONS ====================
+
+let currentTeacherSection = null;
+
 async function loadMyStudents() {
     const tbody = document.getElementById('studentsTableBody');
     if (!tbody) return;
 
-    const profile = await checkAuthAndLoadName();
-    
-    const { data } = await supabaseClient
+    const { data: teacher } = await supabaseClient
         .from('profiles')
-        .select('id, full_name, class_level')
-        .eq('role', 'student')
-        .eq('school_section', profile.school_section);
+        .select('school_section')
+        .eq('id', currentUser.id)
+        .single();
 
-    tbody.innerHTML = data && data.length ? data.map(student => `
+    currentTeacherSection = teacher?.school_section;
+
+    const { data, error } = await supabaseClient
+        .from('profiles')
+        .select('id, full_name, school_section, secondary_level, senior_stream')
+        .eq('role', 'student')
+        .eq('school_section', currentTeacherSection);
+
+    if (error) {
+        tbody.innerHTML = `<tr><td colspan="4">Error loading students</td></tr>`;
+        return;
+    }
+
+    populateFilters(data);
+    renderStudents(data);
+}
+
+function populateFilters(students) {
+    const levels = [...new Set(students.map(s => s.secondary_level).filter(Boolean))];
+    const streams = [...new Set(students.map(s => s.senior_stream).filter(Boolean))];
+
+    const levelSelect = document.getElementById('filterLevel');
+    levelSelect.innerHTML = '<option value="">All Levels</option>' + levels.map(l => `<option value="\( {l}"> \){l}</option>`).join('');
+
+    const streamSelect = document.getElementById('filterStream');
+    streamSelect.innerHTML = '<option value="">All Streams</option>' + streams.map(s => `<option value="\( {s}"> \){s}</option>`).join('');
+}
+
+function filterStudents() {
+    const levelFilter = document.getElementById('filterLevel').value;
+    const streamFilter = document.getElementById('filterStream').value;
+
+    // Re-fetch or filter from cache (for simplicity, we'll re-query)
+    loadMyStudents();
+}
+
+async function renderStudents(data) {
+    const tbody = document.getElementById('studentsTableBody');
+    // Add filtering logic here if needed
+    tbody.innerHTML = data.map(student => `
         <tr>
             <td>${student.full_name}</td>
-            <td>${student.class_level || 'N/A'}</td>
-            <td><button onclick="viewStudentResults('${student.id}')">View Results</button></td>
+            <td>${student.secondary_level || student.school_section}</td>
+            <td>${student.senior_stream || '-'}</td>
+            <td><button onclick="inputResultFor('\( {student.id}', ' \){student.full_name}')">Input Result</button></td>
         </tr>
-    `).join('') : '<tr><td colspan="3">No students found</td></tr>';
+    `).join('');
 }
 
-async function loadTeacherNotes() {
-    const container = document.getElementById('teacherNotesContainer');
-    if (!container) return;
-    // Similar to student notes but for teacher view
-    container.innerHTML = '<p>Notes management coming soon...</p>';
+// Result Input
+async function inputResultFor(studentId, studentName) {
+    showTeacherTab('results');
+    const select = document.getElementById('resultStudent');
+    select.innerHTML = `<option value="\( {studentId}"> \){studentName}</option>`;
 }
 
-window.viewStudentResults = async function(studentId) {
-    alert("Student results viewer - To be fully implemented with modal");
-};
+document.getElementById('resultForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const messageEl = document.getElementById('resultMessage');
 
-// ==================== ADMIN PORTAL ====================
-async function loadAdminDashboard() {
-    await checkAuthAndLoadName();
-    loadAllUsers();
-}
+    const studentId = document.getElementById('resultStudent').value;
+    const subject = document.getElementById('resultSubject').value;
+    const score = parseFloat(document.getElementById('resultScore').value);
+    const grade = document.getElementById('resultGrade').value;
+    const term = document.getElementById('resultTerm').value;
 
-async function loadAllUsers() {
-    const tbody = document.getElementById('usersTableBody');
-    if (!tbody) return;
+    const { error } = await supabaseClient.from('results').insert({
+        student_id: studentId,
+        subject,
+        score,
+        grade,
+        term,
+        uploaded_by: currentUser.id
+    });
 
-    const { data } = await supabaseClient
-        .from('profiles')
-        .select('id, full_name, email, role, school_section, class_level, status')
-        .order('role');
+    if (error) {
+        messageEl.style.color = 'red';
+        messageEl.textContent = 'Failed to save result';
+    } else {
+        messageEl.style.color = 'green';
+        messageEl.textContent = 'Result saved successfully!';
+        e.target.reset();
+    }
+});
 
-    tbody.innerHTML = data && data.length ? data.map(user => `
-        <tr>
-            <td>${user.full_name}</td>
-            <td>${user.email}</td>
-            <td>${user.role}</td>
-            <td>${user.school_section || ''}</td>
-            <td>${user.class_level || ''}</td>
-            <td>${user.status}</td>
-        </tr>
-    `).join('') : '<tr><td colspan="6">No users found</td></tr>';
-}
+
 
 // ==================== TAB SWITCHING FOR ADMIN ====================
 function showAdminTab(tab) {
@@ -681,7 +723,7 @@ window.logout = logout;
 window.checkAuthAndLoadName = checkAuthAndLoadName;
 window.uploadNote = uploadNote;
 window.loadAllUsers = loadAllUsers;
-window.loadMyStudents = loadMyStudents;
+//window.loadMyStudents = loadMyStudents;
 window.updateRoleOptions = updateRoleOptions;
 window.populateSubOptions = populateSubOptions;
 window.populateSeniorStreams = populateSeniorStreams;
@@ -708,7 +750,11 @@ window.closeModal = closeModal;
 window.showAdminTab = showAdminTab;
 window.showStudentTab = showStudentTab;
 window.loadStudentResults = loadStudentResults;
-window.loadStudentNotes = loadStudentNotes;
+window.loadStudentNotes = loadStudentNotes;;
+window.showTeacherTab = showTeacherTab;
+window.loadMyStudents = loadMyStudents;
+window.filterStudents = filterStudents;
+window.inputResultFor = inputResultFor;
 
 
 
