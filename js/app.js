@@ -178,50 +178,83 @@ if (document.getElementById('loginForm')) {
         }
     });
 }
-// ==================== STUDENT PORTAL ====================
-async function loadStudentDashboard() {
-    await checkAuthAndLoadName();
-    loadStudentResults();
-    loadStudentNotes();
+// ==================== STUDENT DASHBOARD ====================
+
+function showStudentTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+    document.getElementById(tab + 'Tab').style.display = 'block';
+    
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+
+    if (tab === 'results') loadStudentResults();
+    if (tab === 'notes') loadStudentNotes();
 }
 
+// Load Student's Results
 async function loadStudentResults() {
     const tbody = document.getElementById('resultsTableBody');
     if (!tbody) return;
 
-    const { data } = await supabaseClient
-        .from('results')
-        .select('*')
-        .eq('student_id', currentUser.id)
-        .order('term', { ascending: false });
+    try {
+        const { data, error } = await supabaseClient
+            .from('results')
+            .select('*')
+            .eq('student_id', currentUser.id)
+            .order('created_at', { ascending: false });
 
-    tbody.innerHTML = data && data.length ? data.map(r => `
-        <tr>
-            <td>${r.subject}</td>
-            <td>${r.score}</td>
-            <td>${r.grade}</td>
-            <td>${r.term}</td>
-        </tr>
-    `).join('') : '<tr><td colspan="4">No results yet</td></tr>';
+        if (error) throw error;
+
+        tbody.innerHTML = data && data.length > 0 
+            ? data.map(r => `
+                <tr>
+                    <td>${r.subject}</td>
+                    <td><strong>${r.score}</strong></td>
+                    <td>${r.grade}</td>
+                    <td>${r.term}</td>
+                    <td>${new Date(r.created_at).toLocaleDateString()}</td>
+                </tr>
+            `).join('')
+            : `<tr><td colspan="5">No results uploaded yet</td></tr>`;
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5">Error loading results</td></tr>`;
+    }
 }
 
+// Load Notes with Download
 async function loadStudentNotes() {
     const container = document.getElementById('notesContainer');
     if (!container) return;
 
-    const { data } = await supabaseClient
-        .from('notes')
-        .select('*')
-        .eq('target_class', currentUser?.user_metadata?.class_level || null)
-        .order('created_at', { ascending: false });
+    try {
+        const { data: profile } = await supabaseClient
+            .from('profiles')
+            .select('school_section, secondary_level, senior_stream')
+            .eq('id', currentUser.id)
+            .single();
 
-    container.innerHTML = data && data.length ? data.map(note => `
-        <div class="note-card">
-            <h4>${note.title}</h4>
-            <p>${note.content}</p>
-            <small>Posted: ${new Date(note.created_at).toLocaleDateString()}</small>
-        </div>
-    `).join('') : '<p>No notes available yet.</p>';
+        const { data, error } = await supabaseClient
+            .from('notes')
+            .select('*, profiles!uploaded_by(full_name)')
+            .eq('target_class', profile?.school_section)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        container.innerHTML = data && data.length > 0 
+            ? data.map(note => `
+                <div class="note-card">
+                    <h4>${note.title}</h4>
+                    <p><strong>Teacher:</strong> ${note.profiles?.full_name || 'Unknown'}</p>
+                    <p>${note.content}</p>
+                    \( {note.file_url ? `<a href=" \){note.file_url}" target="_blank" class="download-btn">📥 Download Attachment</a>` : ''}
+                    <small>Posted: ${new Date(note.created_at).toLocaleDateString()}</small>
+                </div>
+            `).join('')
+            : `<p>No notes available yet for your class.</p>`;
+    } catch (err) {
+        container.innerHTML = `<p>Error loading notes</p>`;
+    }
 }
 
 // ==================== TEACHER PORTAL ====================
@@ -678,6 +711,9 @@ window.suspendUser = suspendUser;
 window.deleteUser = deleteUser;
 window.closeModal = closeModal;
 window.showAdminTab = showAdminTab;
+window.showStudentTab = showStudentTab;
+window.loadStudentResults = loadStudentResults;
+window.loadStudentNotes = loadStudentNotes;
 
 
 
