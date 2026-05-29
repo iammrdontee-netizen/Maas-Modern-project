@@ -521,6 +521,127 @@ function editResult(id) {
 function closeModal() {
     document.getElementById('actionModal').style.display = 'none';
 }
+// ==================== ADMIN USER MANAGEMENT ====================
+async function loadAllUsers() {
+    const tbody = document.getElementById('usersTableBody');
+    if (!tbody) return;
+
+    try {
+        const { data, error } = await supabaseClient
+            .from('profiles')
+            .select('id, full_name, email, role, school_section, secondary_level, senior_stream, status')
+            .order('role');
+
+        if (error) throw error;
+
+        tbody.innerHTML = data && data.length > 0 
+            ? data.map(user => `
+                <tr>
+                    <td>${user.full_name || 'N/A'}</td>
+                    <td>${user.email || 'N/A'}</td>
+                    <td>${user.role || 'N/A'}</td>
+                    <td>${user.school_section || '-'}</td>
+                    <td>${user.secondary_level || '-'}</td>
+                    <td>${user.senior_stream || '-'}</td>
+                    <td><strong>${user.status || 'active'}</strong></td>
+                    <td>
+                        <button class="btn-small" onclick="editUser('${user.id}')">Edit</button>
+                        <button class="btn-small" onclick="suspendUser('${user.id}')">Suspend</button>
+                        <button class="btn-small btn-danger" onclick="deleteUser('${user.id}')">Delete</button>
+                    </td>
+                </tr>
+            `).join('')
+            : `<tr><td colspan="8">No users found</td></tr>`;
+    } catch (err) {
+        console.error(err);
+        tbody.innerHTML = `<tr><td colspan="8">Error loading users</td></tr>`;
+    }
+}
+
+// Edit User
+async function editUser(userId) {
+    const { data: user } = await supabaseClient.from('profiles').select('*').eq('id', userId).single();
+    if (!user) return;
+
+    document.getElementById('editUserId').value = user.id;
+    document.getElementById('editFullName').value = user.full_name || '';
+    document.getElementById('editEmail').value = user.email || '';
+    document.getElementById('editStatus').value = user.status || 'active';
+
+    document.getElementById('editModal').style.display = 'flex';
+}
+
+// Suspend User
+async function suspendUser(userId) {
+    if (!confirm("Suspend this user?")) return;
+
+    const { error } = await supabaseClient
+        .from('profiles')
+        .update({ status: 'suspended' })
+        .eq('id', userId);
+
+    if (error) alert("Failed to suspend user");
+    else {
+        alert("User suspended successfully");
+        loadAllUsers();
+    }
+}
+
+// Delete User
+async function deleteUser(userId) {
+    if (!confirm("⚠️ Permanently delete this user? This action cannot be undone.")) return;
+
+    const { error } = await supabaseClient
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+    if (error) alert("Failed to delete user");
+    else {
+        alert("User deleted successfully");
+        loadAllUsers();
+    }
+}
+
+// Close Modal
+function closeModal() {
+    document.getElementById('editModal').style.display = 'none';
+}
+
+// Tab Control
+function showAdminTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+    document.getElementById(tab + 'Tab').style.display = 'block';
+    
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+
+    if (tab === 'users') loadAllUsers();
+}
+
+// Form Submit Handler
+document.addEventListener('DOMContentLoaded', () => {
+    const editForm = document.getElementById('editUserForm');
+    if (editForm) editForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('editUserId').value;
+        const fullName = document.getElementById('editFullName').value;
+        const email = document.getElementById('editEmail').value;
+        const status = document.getElementById('editStatus').value;
+
+        const { error } = await supabaseClient
+            .from('profiles')
+            .update({ full_name: fullName, email: email, status: status })
+            .eq('id', id);
+
+        if (error) alert("Update failed");
+        else {
+            alert("User updated successfully!");
+            closeModal();
+            loadAllUsers();
+        }
+    });
+});
 
 
 
@@ -551,5 +672,12 @@ window.editUser = editUser;
 window.suspendUser = suspendUser;
 window.editResult = editResult;
 window.closeModal = closeModal;
+window.loadAllUsers = loadAllUsers;
+window.editUser = editUser;
+window.suspendUser = suspendUser;
+window.deleteUser = deleteUser;
+window.closeModal = closeModal;
+window.showAdminTab = showAdminTab;
+
 
 
