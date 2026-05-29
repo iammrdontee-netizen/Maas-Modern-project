@@ -46,20 +46,176 @@ async function checkAuthAndLoadName() {
     }
 }
 
-// ==================== FIXED REGISTRATION LOGIC ====================
+// ==================== IMPROVED REGISTRATION WITH VALIDATION + DYNAMIC FILTERING ====================
 if (document.getElementById('registerForm')) {
-    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    const registerForm = document.getElementById('registerForm');
+    const submitBtn = registerForm.querySelector('button[type="submit"]');
+    const messageEl = document.getElementById('registerMessage');
+
+    // ==================== VALIDATION HELPERS ====================
+    function isValidEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    function isStrongPassword(password) {
+        return password.length >= 8 &&
+               /[A-Z]/.test(password) &&
+               /[a-z]/.test(password) &&
+               /\d/.test(password) &&
+               /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    }
+
+    function showFieldError(fieldId, msg) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.style.borderColor = '#e74c3c';
+            let errorSpan = document.getElementById(fieldId + 'Error');
+            if (!errorSpan) {
+                errorSpan = document.createElement('span');
+                errorSpan.id = fieldId + 'Error';
+                errorSpan.style.fontSize = '0.85rem';
+                field.parentNode.appendChild(errorSpan);
+            }
+            errorSpan.textContent = msg;
+            errorSpan.style.color = '#e74c3c';
+        }
+    }
+
+    function clearFieldError(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (field) field.style.borderColor = '#27ae60';
+        const errorSpan = document.getElementById(fieldId + 'Error');
+        if (errorSpan) errorSpan.textContent = '';
+    }
+
+    function checkFormValidity() {
+        const fullname = document.getElementById('fullName').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const password = document.getElementById('regPassword').value;
+        const role = document.getElementById('role').value;
+
+        const isValid = fullname.length > 0 &&
+                       isValidEmail(email) &&
+                       isStrongPassword(password) &&
+                       role !== '';
+
+        if (submitBtn) submitBtn.disabled = !isValid;
+    }
+
+    // ==================== REAL-TIME VALIDATION ====================
+    const emailField = document.getElementById('regEmail');
+    const passwordField = document.getElementById('regPassword');
+
+    if (emailField) {
+        emailField.addEventListener('input', () => {
+            if (emailField.value.trim() && !isValidEmail(emailField.value)) {
+                showFieldError('regEmail', 'Please enter a valid email address');
+            } else {
+                clearFieldError('regEmail');
+            }
+            checkFormValidity();
+        });
+    }
+
+    if (passwordField) {
+        passwordField.addEventListener('input', () => {
+            if (passwordField.value && !isStrongPassword(passwordField.value)) {
+                showFieldError('regPassword', 'Password must be 8+ chars (Upper, lower, number & special)');
+            } else {
+                clearFieldError('regPassword');
+            }
+            checkFormValidity();
+        });
+    }
+
+    // Required fields
+    ['fullName', 'role'].forEach(id => {
+        const field = document.getElementById(id);
+        if (field) field.addEventListener('change', checkFormValidity);
+    });
+
+    // ==================== DYNAMIC FILTERING (Student & Teacher) ====================
+    window.updateRoleOptions = function() {
+        const role = document.getElementById('role').value;
+        const sectionGroup = document.getElementById('sectionGroup');
+        
+        if (sectionGroup) {
+            sectionGroup.style.display = (role === 'student' || role === 'teacher') ? 'block' : 'none';
+        }
+
+        // Reset sub options
+        const secondarySubGroup = document.getElementById('secondarySubGroup');
+        const seniorStreamGroup = document.getElementById('seniorStreamGroup');
+        if (secondarySubGroup) secondarySubGroup.style.display = 'none';
+        if (seniorStreamGroup) seniorStreamGroup.style.display = 'none';
+
+        checkFormValidity();
+    };
+
+    window.populateSubOptions = function() {
+        const role = document.getElementById('role').value;
+        const section = document.getElementById('schoolSection').value;
+        
+        const secondarySubGroup = document.getElementById('secondarySubGroup');
+        const seniorStreamGroup = document.getElementById('seniorStreamGroup');
+
+        if (!secondarySubGroup || !seniorStreamGroup) return;
+
+        seniorStreamGroup.style.display = 'none';
+
+        if (role === 'student') {
+            if (section === 'pre-school' || section === 'primary') {
+                secondarySubGroup.style.display = 'none';
+            } else if (section === 'junior-secondary' || section === 'senior-secondary') {
+                secondarySubGroup.style.display = 'block';
+            }
+        } 
+        else if (role === 'teacher') {
+            // Teachers only use pre-school, primary, secondary
+            secondarySubGroup.style.display = 'none';
+        }
+    };
+
+    window.populateSeniorStreams = function() {
+        const level = document.getElementById('secondaryLevel').value;
+        const seniorStreamGroup = document.getElementById('seniorStreamGroup');
+        if (seniorStreamGroup) {
+            seniorStreamGroup.style.display = (level === 'senior') ? 'block' : 'none';
+        }
+    };
+
+    // ==================== FORM SUBMISSION ====================
+    registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const fullname = document.getElementById('fullName').value.trim();
         const email = document.getElementById('regEmail').value.trim();
         const password = document.getElementById('regPassword').value;
         const role = document.getElementById('role').value;
-        const schoolSection = document.getElementById('schoolSection').value;
+        const schoolSection = document.getElementById('schoolSection').value || null;
         const secondaryLevel = document.getElementById('secondaryLevel')?.value || null;
         const seniorStream = document.getElementById('seniorStream')?.value || null;
 
-        const messageEl = document.getElementById('registerMessage');
+        if (!fullname || !email || !password || !role) {
+            messageEl.style.color = "red";
+            messageEl.textContent = "Please fill all required fields.";
+            return;
+        }
+
+        if (!isValidEmail(email)) {
+            messageEl.style.color = "red";
+            messageEl.textContent = "Invalid email format.";
+            return;
+        }
+
+        if (!isStrongPassword(password)) {
+            messageEl.style.color = "red";
+            messageEl.textContent = "Password is not strong enough.";
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Creating account...";
 
         try {
             const { data, error } = await supabaseClient.auth.signUp({
@@ -82,38 +238,20 @@ if (document.getElementById('registerForm')) {
             });
 
             messageEl.style.color = "green";
-            messageEl.textContent = "✅ Registration successful! Check your email for confirmation.";
-            setTimeout(() => window.location.href = "login.html", 2500);
+            messageEl.textContent = "✅ Registration successful! Check your email to confirm your account.";
+            
+            setTimeout(() => {
+                window.location.href = "login.html";
+            }, 3000);
+
         } catch (error) {
             messageEl.style.color = "red";
-            messageEl.textContent = error.message;
+            messageEl.textContent = error.message || "Registration failed. Please try again.";
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Register";
         }
     });
 }
-
-// Dynamic Form Controls
-function updateRoleOptions() {
-    const role = document.getElementById('role').value;
-    document.getElementById('sectionGroup').style.display = (role === 'student' || role === 'teacher') ? 'block' : 'none';
-}
-
-function populateSubOptions() {
-    const section = document.getElementById('schoolSection').value;
-    const secondarySubGroup = document.getElementById('secondarySubGroup');
-    
-    // Show secondary options only for students
-    const role = document.getElementById('role').value;
-    secondarySubGroup.style.display = (section === 'secondary' && role === 'student') ? 'block' : 'none';
-    
-    document.getElementById('seniorStreamGroup').style.display = 'none';
-}
-
-function populateSeniorStreams() {
-    const level = document.getElementById('secondaryLevel').value;
-    document.getElementById('seniorStreamGroup').style.display = (level === 'senior') ? 'block' : 'none';
-}
-
-
 
 // ==================== LOGIN SCRIPT ====================
 if (document.getElementById('loginForm')) {
