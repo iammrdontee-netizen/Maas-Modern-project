@@ -61,7 +61,6 @@ if (document.getElementById('registerForm')) {
             });
 
             if (authError) throw authError;
-            if (!data.user) throw new Error("Auth failed");
 
             const { error: profileError } = await supabaseClient
                 .from('profiles')
@@ -75,7 +74,7 @@ if (document.getElementById('registerForm')) {
             if (profileError) throw profileError;
 
             messageEl.style.color = "green";
-            messageEl.textContent = "Registration successful! Redirecting...";
+            messageEl.textContent = "✅ Registration successful! Redirecting...";
 
             setTimeout(() => window.location.href = 'login.html', 2000);
 
