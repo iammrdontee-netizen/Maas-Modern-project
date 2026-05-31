@@ -117,6 +117,41 @@ document.addEventListener('DOMContentLoaded', () => {
         // Initial check
         checkFormValidity();
     }
+ // ==================== LOGIN FORM ====================
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        const messageEl = document.getElementById('loginMessage');
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            messageEl.textContent = "Logging in...";
+            messageEl.style.color = "blue";
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+
+                currentUser = data.user;
+
+                const { data: profile } = await supabaseClient
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', currentUser.id)
+                    .single();
+
+                if (profile?.role === 'teacher') window.location.href = 'teacher.html';
+                else if (profile?.role === 'admin') window.location.href = 'admin.html';
+                else window.location.href = 'student.html';
+
+            } catch (error) {
+                messageEl.style.color = "red";
+                messageEl.textContent = error.message || "Invalid email or password.";
+            }
+        });
+    }
 
     console.log("✅ Maas Modern App Loaded Successfully");
 });
