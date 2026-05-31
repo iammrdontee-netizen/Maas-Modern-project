@@ -40,34 +40,25 @@ function populateSeniorStreams() {
 // ==================== MAIN LOGIC ====================
 document.addEventListener('DOMContentLoaded', () => {
 
-    // ==================== REGISTER FORM ====================
+    // ==================== REGISTER FORM (Kept Safe) ====================
     const registerForm = document.getElementById('registerForm');
     if (registerForm) {
         const submitBtn = registerForm.querySelector('button[type="submit"]');
         const messageEl = document.getElementById('registerMessage');
 
-        // Lenient Validation
         function checkFormValidity() {
             const fullname = document.getElementById('fullName').value.trim();
             const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
             const role = document.getElementById('role').value;
-
-            const isValid = fullname.length > 2 && 
-                           email.length > 5 && 
-                           password.length >= 6 && 
-                           role !== '';
-
-            submitBtn.disabled = !isValid;
+            submitBtn.disabled = !(fullname.length > 2 && email.length > 5 && password.length >= 6 && role);
         }
 
-        // Real-time validation
         ['fullName', 'regEmail', 'regPassword', 'role'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('input', checkFormValidity);
         });
 
-        // Form Submission
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const fullname = document.getElementById('fullName').value.trim();
@@ -86,8 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 const { data, error } = await supabaseClient.auth.signUp({
-                    email,
-                    password,
+                    email, password,
                     options: { emailRedirectTo: window.location.origin + '/login.html' }
                 });
 
@@ -113,17 +103,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 submitBtn.textContent = "Register";
             }
         });
-
-        // Initial check
-        checkFormValidity();
     }
- // ==================== LOGIN FORM ====================
+
+    // ==================== LOGIN FORM ====================
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
         const messageEl = document.getElementById('loginMessage');
 
         loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+            e.preventDefault();   // ← Prevents page reload
+
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
 
