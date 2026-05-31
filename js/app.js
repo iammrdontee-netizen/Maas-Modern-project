@@ -12,7 +12,9 @@ let currentUser = null;
 function updateRoleOptions() {
     const role = document.getElementById('role')?.value;
     const sectionGroup = document.getElementById('sectionGroup');
-    if (sectionGroup) sectionGroup.style.display = (role === 'student' || role === 'teacher') ? 'block' : 'none';
+    if (sectionGroup) {
+        sectionGroup.style.display = (role === 'student' || role === 'teacher') ? 'block' : 'none';
+    }
 }
 
 function populateSubOptions() {
@@ -34,118 +36,70 @@ function populateSubOptions() {
 function populateSeniorStreams() {
     const level = document.getElementById('secondaryLevel')?.value;
     const seniorStreamGroup = document.getElementById('seniorStreamGroup');
-    if (seniorStreamGroup) seniorStreamGroup.style.display = (level === 'senior') ? 'block' : 'none';
+    if (seniorStreamGroup) {
+        seniorStreamGroup.style.display = (level === 'senior') ? 'block' : 'none';
+    }
 }
 
-// ==================== MAIN APP LOGIC ====================
+// ==================== MAIN LOGIC ====================
 document.addEventListener('DOMContentLoaded', () => {
 
-    // Register & Login (kept working)
-    if (document.getElementById('registerForm') || document.getElementById('loginForm')) {
-        console.log("Auth pages loaded");
-    }
+    // ==================== REGISTER FORM ====================
+    const registerForm = document.getElementById('registerForm');
+    if (registerForm) {
+        const submitBtn = registerForm.querySelector('button[type="submit"]');
+        const messageEl = document.getElementById('registerMessage');
 
-    // ==================== STUDENT DASHBOARD ====================
-    if (document.getElementById('studentDashboard')) {
-
-        async function initStudentDashboard() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) {
-                window.location.href = 'login.html';
-                return;
-            }
-            currentUser = session.user;
-
-            const { data: profile } = await supabaseClient
-                .from('profiles')
-                .select('full_name')
-                .eq('id', currentUser.id)
-                .single();
-
-            if (profile && document.getElementById('studentName')) {
-                document.getElementById('studentName').textContent = profile.full_name || "Student";
-            }
-
-            loadStudentResults();
-            loadStudentNotes();
+        function checkFormValidity() {
+            const fullname = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const role = document.getElementById('role').value;
+            submitBtn.disabled = !(fullname.length > 2 && email.length > 5 && password.length >= 6 && role);
         }
 
-        // Tab Switching
-        window.showStudentTab = function(tab) {
-            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-            const activeTab = document.getElementById(tab + 'Tab');
-            if (activeTab) activeTab.style.display = 'block';
+        ['fullName', 'regEmail', 'regPassword', 'role'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', checkFormValidity);
+        });
 
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            const btn = document.querySelector(`[onclick="showStudentTab('${tab}')"]`);
-            if (btn) btn.classList.add('active');
-        };
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fullname = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const role = document.getElementById('role').value;
 
-        // Load Results
-        window.loadStudentResults = async function() {
-            const tbody = document.getElementById('resultsTableBody');
-            if (!tbody) return;
+            if (!fullname || !email || !password || !role) {
+                messageEl.style.color = "red";
+                messageEl.textContent = "Please fill all fields.";
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Creating account...";
 
             try {
-                const { data } = await supabaseClient
-                    .from('results')
-                    .select('*')
-                    .eq('student_id', currentUser.id)
-                    .order('created_at', { ascending: false });
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email,
+                    password,
+                    options: { emailRedirectTo: window.location.origin + '/login.html' }
+                });
 
-                tbody.innerHTML = data?.length ? data.map(r => `
-                    <tr>
-                        <td>${r.subject}</td>
-                        <td><strong>${r.score}</strong></td>
-                        <td>${r.grade}</td>
-                        <td>${r.term}</td>
-                    </tr>
-                `).join('') : `<tr><td colspan="4">No results yet.</td></tr>`;
-            } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="4">Error loading results</td></tr>`;
-            }
-        };
+                if (error) throw error;
 
-        // ==================== NOTES FUNCTIONALITY ====================
-        window.loadStudentNotes = async function() {
-            const container = document.getElementById('notesContainer');
-            if (!container) return;
+                await supabaseClient.from('profiles').insert({
+                    id: data.user.id,
+                    full_name: fullname,
+                    role: role,
+                    school_section: document.getElementById('schoolSection')?.value || null,
+                    secondary_level: document.getElementById('secondaryLevel')?.value || null,
+                    senior_stream: document.getElementById('seniorStream')?.value || null,
+                    status: 'active'
+                });
 
-            try {
-                const { data: profile } = await supabaseClient
-                    .from('profiles')
-                    .select('school_section')
-                    .eq('id', currentUser.id)
-                    .single();
-
-                const { data: notes } = await supabaseClient
-                    .from('notes')
-                    .select(`
-                        *,
-                        profiles!uploaded_by (full_name)
-                    `)
-                    .eq('target_class', profile?.school_section)
-                    .order('created_at', { ascending: false });
-
-                container.innerHTML = notes?.length ? notes.map(note => `
-                    <div class="note-card" style="border:1px solid #ddd; padding:15px; margin-bottom:15px; border-radius:8px;">
-                        <h4>${note.title}</h4>
-                        <p><strong>Teacher:</strong> ${note.profiles?.full_name || 'Unknown'}</p>
-                        <p>${note.content}</p>
-                        ${note.file_url ? 
-                            `<a href="${note.file_url}" target="_blank" class="download-btn" style="color:#27ae60;">📥 Download Attachment</a>` : ''}
-                        <small>Posted: ${new Date(note.created_at).toLocaleDateString()}</small>
-                    </div>
-                `).join('') : `<p>No notes available yet for your class.</p>`;
-            } catch (err) {
-                console.error(err);
-                container.innerHTML = `<p>Error loading notes.</p>`;
-            }
-        };
-
-        // Initialize
-        initStudentDashboard();
-    }
-
-    console.log("✅ Maas Modern App Loaded Successfully");
-});
+                messageEl.style.color = "green";
+                messageEl.textContent = "✅ Registration successful! Check your email to confirm.";
+                setTimeout(() => window.location.href = "login.html", 2500);
+            } catch (error) {
+                messageEl
