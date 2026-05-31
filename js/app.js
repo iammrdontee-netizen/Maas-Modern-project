@@ -12,9 +12,7 @@ let currentUser = null;
 function updateRoleOptions() {
     const role = document.getElementById('role')?.value;
     const sectionGroup = document.getElementById('sectionGroup');
-    if (sectionGroup) {
-        sectionGroup.style.display = (role === 'student' || role === 'teacher') ? 'block' : 'none';
-    }
+    if (sectionGroup) sectionGroup.style.display = (role === 'student' || role === 'teacher') ? 'block' : 'none';
 }
 
 function populateSubOptions() {
@@ -36,9 +34,7 @@ function populateSubOptions() {
 function populateSeniorStreams() {
     const level = document.getElementById('secondaryLevel')?.value;
     const seniorStreamGroup = document.getElementById('seniorStreamGroup');
-    if (seniorStreamGroup) {
-        seniorStreamGroup.style.display = (level === 'senior') ? 'block' : 'none';
-    }
+    if (seniorStreamGroup) seniorStreamGroup.style.display = (level === 'senior') ? 'block' : 'none';
 }
 
 // ==================== MAIN LOGIC ====================
@@ -50,19 +46,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const submitBtn = registerForm.querySelector('button[type="submit"]');
         const messageEl = document.getElementById('registerMessage');
 
+        // Lenient Validation
         function checkFormValidity() {
             const fullname = document.getElementById('fullName').value.trim();
             const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
             const role = document.getElementById('role').value;
-            submitBtn.disabled = !(fullname.length > 2 && email.length > 5 && password.length >= 6 && role);
+
+            const isValid = fullname.length > 2 && 
+                           email.length > 5 && 
+                           password.length >= 6 && 
+                           role !== '';
+
+            submitBtn.disabled = !isValid;
         }
 
+        // Real-time validation
         ['fullName', 'regEmail', 'regPassword', 'role'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('input', checkFormValidity);
         });
 
+        // Form Submission
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const fullname = document.getElementById('fullName').value.trim();
@@ -102,4 +107,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 messageEl.textContent = "✅ Registration successful! Check your email to confirm.";
                 setTimeout(() => window.location.href = "login.html", 2500);
             } catch (error) {
-                messageEl
+                messageEl.style.color = "red";
+                messageEl.textContent = error.message || "Registration failed.";
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Register";
+            }
+        });
+
+        // Initial check
+        checkFormValidity();
+    }
+
+    console.log("✅ Maas Modern App Loaded Successfully");
+});
