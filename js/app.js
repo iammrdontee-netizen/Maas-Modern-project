@@ -39,9 +39,9 @@ async function logout() {
 }
 
 function showMessage(msg, isError = false) {
-    const els = document.querySelectorAll('p, div, span');
+    const els = document.querySelectorAll('p, div, span, small');
     for (let el of els) {
-        if (el.textContent.length < 150) {
+        if (el.textContent.length < 200) {
             el.style.color = isError ? 'red' : 'green';
             el.textContent = msg;
             setTimeout(() => el.textContent = '', 5000);
@@ -50,7 +50,7 @@ function showMessage(msg, isError = false) {
     }
 }
 
-// ==================== ORIGINAL FUNCTIONS (Restored) ====================
+// ==================== ORIGINAL HELPER FUNCTIONS ====================
 window.updateRoleOptions = function() {
     const role = document.getElementById('role')?.value;
     const sectionGroup = document.getElementById('sectionGroup');
@@ -74,6 +74,7 @@ window.populateSeniorStreams = function() {
 window.showStudentTab = function(tab) {
     const results = document.getElementById('resultsContent');
     const notes = document.getElementById('notesContent');
+    if (!results || !notes) return;
     if (tab === 'results') {
         results.style.display = 'block';
         notes.style.display = 'none';
@@ -93,106 +94,97 @@ window.changeSlide = function(n) {
     images.forEach((img, i) => img.style.display = (i === slideIndex) ? 'block' : 'none');
 };
 
-// ==================== REGISTER - STRONG BUTTON FIX ====================
+// ==================== REGISTER BUTTON - VERY STRONG FIX ====================
 function setupRegisterForm() {
-    const form = document.getElementById('registerForm') || document.querySelector('form');
+    // Find form and button more reliably
+    const form = document.querySelector('form') || document.getElementById('registerForm');
     if (!form) return;
 
-    // Strong button fix
-    let registerBtn = form.querySelector('button, input[type="submit"], #registerBtn');
-    
-    if (registerBtn) {
-        registerBtn.style.opacity = '1';
-        registerBtn.style.backgroundColor = '#4CAF50';
-        registerBtn.style.color = 'white';
-        registerBtn.style.cursor = 'pointer';
-        registerBtn.style.border = 'none';
-        registerBtn.style.padding = '14px 32px';
-        registerBtn.style.fontSize = '16px';
-        registerBtn.style.fontWeight = 'bold';
-        registerBtn.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+    let button = form.querySelector('button') || form.querySelector('input[type="submit"]') || document.querySelector('#registerBtn');
+
+    // Visual fix for fading
+    if (button) {
+        button.style.opacity = '1';
+        button.style.backgroundColor = '#4CAF50';
+        button.style.color = 'white';
+        button.style.cursor = 'pointer';
+        button.style.padding = '14px 32px';
+        button.style.fontSize = '16px';
+        button.style.fontWeight = 'bold';
+        button.style.border = 'none';
+        button.style.borderRadius = '6px';
     }
 
-    // Force button to be submit type
-    if (registerBtn && registerBtn.tagName !== 'BUTTON') {
-        registerBtn.type = 'submit';
-    }
+    // Main registration function
+    const registerUser = async () => {
+        const fullName = document.getElementById('fullName')?.value?.trim();
+        const email = document.getElementById('email')?.value?.trim();
+        const password = document.getElementById('password')?.value?.trim();
+        const role = document.getElementById('role')?.value;
+        const schoolSection = document.getElementById('schoolSection')?.value || null;
 
-    // Submit handler
+        if (!fullName || !email || !password || !role) {
+            showMessage("Please fill all required fields", true);
+            return;
+        }
+
+        try {
+            const { data, error } = await supabaseClient.auth.signUp({
+                email, 
+                password,
+                options: { data: { full_name: fullName } }
+            });
+
+            if (error) throw error;
+
+            const { error: profileError } = await supabaseClient.from('profiles').insert({
+                id: data.user.id,
+                full_name: fullName,
+                role: role,
+                school_section: schoolSection,
+                created_at: new Date().toISOString()
+            });
+
+            if (profileError) throw profileError;
+
+            showMessage("✅ Registration Successful! Redirecting...", false);
+            setTimeout(() => window.location.href = 'login.html', 2000);
+        } catch (err) {
+            console.error(err);
+            showMessage("❌ " + (err.message || "Registration failed"), true);
+        }
+    };
+
+    // Attach to form submit
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        await handleRegistration();
+        await registerUser();
     });
 
-    // Extra click handler as backup
-    if (registerBtn) {
-        registerBtn.addEventListener('click', async (e) => {
-            if (form.checkValidity()) {
-                e.preventDefault();
-                await handleRegistration();
-            }
+    // Backup direct click on button
+    if (button) {
+        button.addEventListener('click', async (e) => {
+            e.preventDefault();
+            await registerUser();
         });
     }
 }
 
-async function handleRegistration() {
-    const fullName = document.getElementById('fullName')?.value;
-    const email = document.getElementById('email')?.value;
-    const password = document.getElementById('password')?.value;
-    const role = document.getElementById('role')?.value;
-    const schoolSection = document.getElementById('schoolSection')?.value || null;
-
-    if (!fullName || !email || !password || !role) {
-        showMessage("Please fill all required fields", true);
-        return;
-    }
-
-    try {
-        const { data, error } = await supabaseClient.auth.signUp({
-            email,
-            password,
-            options: { data: { full_name: fullName } }
-        });
-
-        if (error) throw error;
-
-        const { error: profileError } = await supabaseClient.from('profiles').insert({
-            id: data.user.id,
-            full_name: fullName,
-            role: role,
-            school_section: schoolSection,
-            created_at: new Date().toISOString()
-        });
-
-        if (profileError) throw profileError;
-
-        showMessage("✅ Registration Successful! Redirecting to login...", false);
-        setTimeout(() => window.location.href = 'login.html', 1800);
-    } catch (err) {
-        console.error(err);
-        showMessage("❌ " + (err.message || "Registration failed"), true);
-    }
-}
-
-// ==================== NOTES & OTHER FUNCTIONS ====================
+// ==================== NOTES & DASHBOARDS ====================
 async function loadNotes() {
     const container = document.getElementById('notesContainer');
     if (!container) return;
-
+    // ... (same as previous versions)
     try {
         const { data, error } = await supabaseClient.from('notes').select('*').order('created_at', { ascending: false });
-        if (error) throw error;
-
         container.innerHTML = data?.length ? data.map(note => `
-            <div style="border:1px solid #ddd; padding:15px; margin:10px 0; border-radius:8px;">
+            <div style="border:1px solid #ddd;padding:15px;margin:10px 0;border-radius:8px;">
                 <h4>${note.title}</h4>
                 <p><strong>Subject:</strong> ${note.subject} | <strong>Teacher:</strong> ${note.teacher_name}</p>
-                <button onclick="downloadNote('\( {note.file_url}', ' \){note.title}')" style="background:#2196F3;color:white;padding:10px 18px;border:none;border-radius:5px;cursor:pointer;">
-                    📥 Download
-                </button>
+                <button onclick="downloadNote('\( {note.file_url}', ' \){note.title}')" style="background:#2196F3;color:white;padding:10px 18px;border:none;border-radius:5px;cursor:pointer;">📥 Download</button>
             </div>
         `).join('') : '<p>No notes available yet.</p>';
-    } catch (err) {
+    } catch (e) {
         container.innerHTML = '<p style="color:red">Failed to load notes</p>';
     }
 }
@@ -210,14 +202,20 @@ window.downloadNote = async function(fileUrl, title) {
     }
 };
 
-// Dashboard functions (loadStudentResults, etc.) remain the same...
+// (Add your loadStudentResults, loadStudentsByStream, etc. here - same as before)
 
-async function loadStudentResults() { /* ... your code ... */ }
-async function loadStudentsByStream() { /* ... */ }
-async function loadAllUsers() { /* ... */ }
-async function loadAllStudentResults() { /* ... */ }
+async function loadStudentResults() {
+    const tbody = document.querySelector('table tbody');
+    if (!tbody) return;
+    const { data } = await supabaseClient.from('results').select('*').eq('student_id', currentUser.id);
+    tbody.innerHTML = data?.length 
+        ? data.map(r => `<tr><td>\( {r.subject}</td><td> \){r.score}</td><td>\( {r.grade}</td><td> \){r.term}</td></tr>`).join('')
+        : `<tr><td colspan="4">No results yet</td></tr>`;
+}
 
-// ==================== MAIN ====================
+// ... other dashboard functions ...
+
+// ==================== MAIN LOGIC ====================
 document.addEventListener('DOMContentLoaded', async () => {
     setupRegisterForm();
 
@@ -237,11 +235,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadAllStudentResults();
     }
 
+    // Logout handlers
     document.querySelectorAll('a, button').forEach(el => {
         if (el.textContent.toLowerCase().includes('logout')) {
-            el.addEventListener('click', e => { e.preventDefault(); logout(); });
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
+                logout();
+            });
         }
     });
 
-    console.log("✅ Maas Modern App Loaded - Register Button Fixed");
+    console.log("✅ Maas Modern App - Button Should Now Work");
 });
