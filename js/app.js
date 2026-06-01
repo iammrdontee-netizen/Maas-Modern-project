@@ -65,6 +65,27 @@ function calculateGrade(score) {
     return 'F';
 }
 
+// ==================== ORIGINAL REGISTER FUNCTIONS (Restored) ====================
+window.updateRoleOptions = function() {
+    const role = document.getElementById('role')?.value;
+    const sectionGroup = document.getElementById('sectionGroup');
+    if (sectionGroup) sectionGroup.style.display = (role === 'student' || role === 'teacher') ? 'block' : 'none';
+};
+
+window.populateSubOptions = function() {
+    const section = document.getElementById('schoolSection')?.value;
+    const secondaryGroup = document.getElementById('secondarySubGroup');
+    const seniorGroup = document.getElementById('seniorStreamGroup');
+    if (secondaryGroup) secondaryGroup.style.display = (section === 'junior-secondary' || section === 'senior-secondary') ? 'block' : 'none';
+    if (seniorGroup) seniorGroup.style.display = 'none';
+};
+
+window.populateSeniorStreams = function() {
+    const level = document.getElementById('secondaryLevel')?.value;
+    const seniorGroup = document.getElementById('seniorStreamGroup');
+    if (seniorGroup) seniorGroup.style.display = (level === 'senior') ? 'block' : 'none';
+};
+
 // ==================== GALLERY ====================
 let slideIndex = 0;
 window.changeSlide = function(n) {
@@ -76,7 +97,7 @@ window.changeSlide = function(n) {
     });
 };
 
-// ==================== REGISTER PAGE (Fixed Button + Reduced Security) ====================
+// ==================== REGISTER PAGE (Fixed Button) ====================
 function setupRegisterForm() {
     const form = document.getElementById('registerForm') || document.querySelector('form');
     if (!form) return;
@@ -94,9 +115,9 @@ function setupRegisterForm() {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const fullName = document.getElementById('fullName')?.value || document.querySelector('input[placeholder*="Name"]')?.value;
-        const email = document.getElementById('email')?.value || document.querySelector('input[type="email"]')?.value;
-        const password = document.getElementById('password')?.value || document.querySelector('input[type="password"]')?.value;
+        const fullName = document.getElementById('fullName')?.value;
+        const email = document.getElementById('email')?.value;
+        const password = document.getElementById('password')?.value;
         const role = document.getElementById('role')?.value;
         const schoolSection = document.getElementById('schoolSection')?.value || null;
 
@@ -124,16 +145,16 @@ function setupRegisterForm() {
 
             if (profileError) throw profileError;
 
-            showMessage("Registration successful! Redirecting to login...", false);
+            showMessage("✅ Registration successful! Redirecting...", false);
             setTimeout(() => window.location.href = 'login.html', 2000);
         } catch (err) {
             console.error(err);
-            showMessage(err.message || "Registration failed", true);
+            showMessage("❌ " + (err.message || "Registration failed"), true);
         }
     });
 }
 
-// ==================== NOTES FUNCTIONALITY ====================
+// ==================== NOTES ====================
 async function loadNotes() {
     const container = document.getElementById('notesContainer');
     if (!container) return;
@@ -175,7 +196,7 @@ window.downloadNote = async function(fileUrl, title) {
         a.click();
         window.URL.revokeObjectURL(url);
     } catch (err) {
-        alert("Download failed. File may not be available.");
+        alert("Download failed.");
     }
 };
 
@@ -193,20 +214,13 @@ window.uploadNote = async function() {
     const fileName = `\( {Date.now()}- \){file.name}`;
 
     try {
-        const { error: uploadError } = await supabaseClient.storage
-            .from('notes')
-            .upload(fileName, file);
-
+        const { error: uploadError } = await supabaseClient.storage.from('notes').upload(fileName, file);
         if (uploadError) throw uploadError;
 
         const publicUrl = supabaseClient.storage.from('notes').getPublicUrl(fileName).data.publicUrl;
 
         const { error: dbError } = await supabaseClient.from('notes').insert({
-            title,
-            subject,
-            teacher_name: currentProfile.full_name,
-            file_url: publicUrl,
-            uploaded_by: currentUser.id
+            title, subject, teacher_name: currentProfile.full_name, file_url: publicUrl, uploaded_by: currentUser.id
         });
 
         if (dbError) throw dbError;
@@ -218,7 +232,22 @@ window.uploadNote = async function() {
     }
 };
 
-// ==================== DASHBOARD FUNCTIONS ====================
+// ==================== STUDENT TAB FUNCTION (Restored) ====================
+window.showStudentTab = function(tab) {
+    const resultsContent = document.getElementById('resultsContent');
+    const notesContent = document.getElementById('notesContent');
+
+    if (tab === 'results') {
+        if (resultsContent) resultsContent.style.display = 'block';
+        if (notesContent) notesContent.style.display = 'none';
+    } else if (tab === 'notes') {
+        if (resultsContent) resultsContent.style.display = 'none';
+        if (notesContent) notesContent.style.display = 'block';
+        loadNotes();
+    }
+};
+
+// ==================== DASHBOARDS ====================
 async function loadStudentResults() {
     const tbody = document.querySelector('table tbody');
     if (!tbody) return;
@@ -256,81 +285,28 @@ async function loadAllStudentResults() {
         : `<tr><td colspan="5">No results</td></tr>`;
 }
 
-// ==================== STUDENT TABS ====================
-function setupStudentTabs() {
-    const resultsTab = document.getElementById('resultsTab');
-    const notesTab = document.getElementById('notesTab');
-    const resultsContent = document.getElementById('resultsContent');
-    const notesContent = document.getElementById('notesContent');
-
-    if (resultsTab && notesTab) {
-        resultsTab.addEventListener('click', () => {
-            resultsTab.classList.add('active');
-            notesTab.classList.remove('active');
-            if (resultsContent) resultsContent.style.display = 'block';
-            if (notesContent) notesContent.style.display = 'none';
-        });
-
-        notesTab.addEventListener('click', () => {
-            notesTab.classList.add('active');
-            resultsTab.classList.remove('active');
-            if (resultsContent) resultsContent.style.display = 'none';
-            if (notesContent) notesContent.style.display = 'block';
-            loadNotes();
-        });
-    }
-}
-
 // ==================== MAIN LOGIC ====================
 document.addEventListener('DOMContentLoaded', async () => {
 
-    if (document.querySelector('img')) {
-        window.changeSlide(0);
-    }
+    if (document.querySelector('img')) window.changeSlide(0);
 
     setupRegisterForm();
-    setupStudentTabs();
-
-    // Login Page
-    if (document.title.toLowerCase().includes('login')) {
-        const form = document.getElementById('loginForm') || document.querySelector('form');
-        if (form) {
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const email = document.getElementById('email')?.value || document.querySelector('input[type="email"]')?.value;
-                const password = document.getElementById('password')?.value || document.querySelector('input[type="password"]')?.value;
-
-                try {
-                    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-                    if (error) throw error;
-
-                    const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', data.user.id).single();
-
-                    if (profile?.role === 'student') window.location.href = 'student.html';
-                    else if (profile?.role === 'teacher') window.location.href = 'teacher.html';
-                    else if (profile?.role === 'admin') window.location.href = 'admin.html';
-                    else window.location.href = 'login.html';
-                } catch (err) {
-                    showMessage(err.message, true);
-                }
-            });
-        }
-    }
 
     // Student Dashboard
     if (document.title.toLowerCase().includes('student')) {
         await checkAuth(['student']);
         loadStudentResults();
-        loadNotes();   // Load notes on page load
+        // Call original name if HTML uses it
+        if (typeof window.checkAuthAndLoadName === 'function') window.checkAuthAndLoadName();
     }
 
-    // Teacher Dashboard
+    // Teacher
     if (document.title.toLowerCase().includes('teacher')) {
         await checkAuth(['teacher']);
         loadStudentsByStream();
     }
 
-    // Admin Dashboard
+    // Admin
     if (document.title.toLowerCase().includes('admin')) {
         await checkAuth(['admin']);
         loadAllUsers();
@@ -340,10 +316,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Logout
     document.querySelectorAll('a, button').forEach(el => {
         if (el.textContent.toLowerCase().includes('logout')) {
-            el.addEventListener('click', (e) => {
-                e.preventDefault();
-                logout();
-            });
+            el.addEventListener('click', (e) => { e.preventDefault(); logout(); });
         }
     });
 
