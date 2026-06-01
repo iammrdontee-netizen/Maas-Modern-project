@@ -5,7 +5,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const { createClient } = supabase;
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ==================== GLOBAL REGISTER FUNCTIONS ====================
+// ==================== REGISTER HELPER FUNCTIONS ====================
 window.updateRoleOptions = function() {
     const role = document.getElementById('role')?.value;
     const sectionGroup = document.getElementById('sectionGroup');
@@ -24,7 +24,11 @@ window.populateSubOptions = function() {
     seniorStreamGroup.style.display = 'none';
 
     if (role === 'student') {
-        secondarySubGroup.style.display = (section === 'junior-secondary' || section === 'senior-secondary') ? 'block' : 'none';
+        if (section === 'junior-secondary' || section === 'senior-secondary') {
+            secondarySubGroup.style.display = 'block';
+        } else {
+            secondarySubGroup.style.display = 'none';
+        }
     } else if (role === 'teacher') {
         secondarySubGroup.style.display = 'none';
     }
@@ -38,17 +42,71 @@ window.populateSeniorStreams = function() {
     }
 };
 
-// ==================== MAIN APP LOGIC ====================
+// ==================== MAIN LOGIC ====================
 document.addEventListener('DOMContentLoaded', () => {
 
     // Register Form
     if (document.getElementById('registerForm')) {
-        console.log("✅ Register page loaded");
-    }
+        const submitBtn = document.getElementById('registerForm').querySelector('button[type="submit"]');
+        const messageEl = document.getElementById('registerMessage');
 
-    // Login Form
-    if (document.getElementById('loginForm')) {
-        console.log("✅ Login page loaded");
+        function checkFormValidity() {
+            const fullname = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const role = document.getElementById('role').value;
+            submitBtn.disabled = !(fullname.length > 2 && email.length > 5 && password.length >= 6 && role);
+        }
+
+        ['fullName', 'regEmail', 'regPassword', 'role'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', checkFormValidity);
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fullname = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const role = document.getElementById('role').value;
+
+            if (!fullname || !email || !password || !role) {
+                messageEl.style.color = "red";
+                messageEl.textContent = "Please fill all fields.";
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Creating account...";
+
+            try {
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email, password,
+                    options: { emailRedirectTo: window.location.origin + '/login.html' }
+                });
+
+                if (error) throw error;
+
+                await supabaseClient.from('profiles').insert({
+                    id: data.user.id,
+                    full_name: fullname,
+                    role: role,
+                    school_section: document.getElementById('schoolSection')?.value || null,
+                    secondary_level: document.getElementById('secondaryLevel')?.value || null,
+                    senior_stream: document.getElementById('seniorStream')?.value || null,
+                    status: 'active'
+                });
+
+                messageEl.style.color = "green";
+                messageEl.textContent = "✅ Registration successful! Check your email to confirm.";
+                setTimeout(() => window.location.href = "login.html", 2500);
+            } catch (error) {
+                messageEl.style.color = "red";
+                messageEl.textContent = error.message || "Registration failed.";
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Register";
+            }
+        });
     }
 
     console.log("✅ Maas Modern App Loaded Successfully");
