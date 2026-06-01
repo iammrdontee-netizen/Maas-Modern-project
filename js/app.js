@@ -8,7 +8,7 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ==================== GLOBAL VARIABLES ====================
 let currentUser = null;
 
-// ==================== REGISTER HELPER FUNCTIONS (Safe) ====================
+// ==================== REGISTER HELPER FUNCTIONS ====================
 window.updateRoleOptions = function() {
     const role = document.getElementById('role')?.value;
     const sectionGroup = document.getElementById('sectionGroup');
