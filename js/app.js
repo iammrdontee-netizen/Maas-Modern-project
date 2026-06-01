@@ -66,7 +66,7 @@ function calculateGrade(score) {
     return 'F';
 }
 
-// ==================== INDEX GALLERY (Safe - doesn't break images) ====================
+// ==================== INDEX GALLERY ====================
 let slideIndex = 0;
 window.changeSlide = function(n) {
     const images = document.querySelectorAll('img');
@@ -77,28 +77,170 @@ window.changeSlide = function(n) {
     });
 };
 
-// ==================== REGISTER PAGE (Fixed Streams/Dropdowns) ====================
-window.updateRoleOptions = function() {
-    const role = document.getElementById('role')?.value;
-    const sectionGroup = document.getElementById('sectionGroup');
-    if (sectionGroup) sectionGroup.style.display = (role === 'student' || role === 'teacher') ? 'block' : 'none';
+// ==================== REGISTER PAGE (Fixed + Reduced Security) ====================
+function setupRegisterForm() {
+    const form = document.getElementById('registerForm');
+    if (!form) return;
+
+    const registerBtn = document.getElementById('registerBtn') || form.querySelector('button[type="submit"]');
+    
+    // Fix fading button
+    if (registerBtn) {
+        registerBtn.style.opacity = '1';
+        registerBtn.style.backgroundColor = '#4CAF50';
+        registerBtn.style.color = 'white';
+        registerBtn.style.cursor = 'pointer';
+        registerBtn.style.border = 'none';
+        registerBtn.style.padding = '12px 24px';
+    }
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const fullName = document.getElementById('fullName')?.value;
+        const email = document.getElementById('email')?.value;
+        const password = document.getElementById('password')?.value;
+        const role = document.getElementById('role')?.value;
+        const schoolSection = document.getElementById('schoolSection')?.value;
+        const secondaryLevel = document.getElementById('secondaryLevel')?.value;
+        const seniorStream = document.getElementById('seniorStream')?.value;
+
+        if (!fullName || !email || !password || !role) {
+            showMessage("Please fill all required fields", true);
+            return;
+        }
+
+        try {
+            const { data, error } = await supabaseClient.auth.signUp({
+                email,
+                password,
+                options: { data: { full_name: fullName } }
+            });
+
+            if (error) throw error;
+
+            const { error: profileError } = await supabaseClient
+                .from('profiles')
+                .insert({
+                    id: data.user.id,
+                    full_name: fullName,
+                    role: role,
+                    school_section: schoolSection || null,
+                    secondary_level: secondaryLevel || null,
+                    senior_stream: seniorStream || null,
+                    created_at: new Date().toISOString()
+                });
+
+            if (profileError) throw profileError;
+
+            showMessage("Registration successful! Redirecting to login...");
+            setTimeout(() => window.location.href = 'login.html', 2000);
+
+        } catch (err) {
+            console.error(err);
+            showMessage(err.message || "Registration failed. Try again.", true);
+        }
+    });
+}
+
+// ==================== NOTES FUNCTIONALITY ====================
+async function loadNotes() {
+    const notesContainer = document.getElementById('notesContainer');
+    if (!notesContainer) return;
+
+    try {
+        const { data, error } = await supabaseClient
+            .from('notes')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+            notesContainer.innerHTML = `<p>No notes available yet.</p>`;
+            return;
+        }
+
+        notesContainer.innerHTML = data.map(note => `
+            <div class="note-card" style="border:1px solid #ddd; padding:15px; margin:10px 0; border-radius:8px; background:#f9f9f9;">
+                <h4>${note.title}</h4>
+                <p><strong>Subject:</strong> ${note.subject} | <strong>By:</strong> ${note.teacher_name}</p>
+                <p>${note.description || 'No description provided.'}</p>
+                <button onclick="downloadNote('\( {note.file_url}', ' \){note.title}')" 
+                        style="background:#2196F3; color:white; padding:8px 16px; border:none; border-radius:4px; cursor:pointer;">
+                    📥 Download Note
+                </button>
+            </div>
+        `).join('');
+    } catch (err) {
+        console.error(err);
+        notesContainer.innerHTML = `<p style="color:red">Failed to load notes</p>`;
+    }
+}
+
+window.downloadNote = async function(fileUrl, title) {
+    try {
+        const response = await fetch(fileUrl);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = title.replace(/[^a-z0-9]/gi, '_') + '.pdf';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+    } catch (err) {
+        alert("Download failed. File may not be available.");
+    }
 };
 
-window.populateSubOptions = function() {
-    const section = document.getElementById('schoolSection')?.value;
-    const secondaryGroup = document.getElementById('secondarySubGroup');
-    const seniorGroup = document.getElementById('seniorStreamGroup');
-    if (secondaryGroup) secondaryGroup.style.display = (section === 'junior-secondary' || section === 'senior-secondary') ? 'block' : 'none';
-    if (seniorGroup) seniorGroup.style.display = 'none';
+// For Teachers - Upload Note
+window.uploadNote = async function() {
+    const title = document.getElementById('noteTitle')?.value;
+    const subject = document.getElementById('noteSubject')?.value;
+    const description = document.getElementById('noteDescription')?.value || '';
+    const fileInput = document.getElementById('noteFile');
+
+    if (!title || !subject || !fileInput?.files[0]) {
+        alert("Please fill title, subject and select a file");
+        return;
+    }
+
+    const file = fileInput.files[0];
+    const fileName = `\( {Date.now()}- \){file.name}`;
+
+    try {
+        const { data: fileData, error: uploadError } = await supabaseClient.storage
+            .from('notes')
+            .upload(fileName, file, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        const publicUrl = supabaseClient.storage.from('notes').getPublicUrl(fileName).data.publicUrl;
+
+        const { error: dbError } = await supabaseClient
+            .from('notes')
+            .insert({
+                title,
+                subject,
+                description,
+                teacher_name: currentProfile.full_name,
+                file_url: publicUrl,
+                uploaded_by: currentUser.id
+            });
+
+        if (dbError) throw dbError;
+
+        showMessage("Note uploaded successfully!");
+        loadNotes(); // Refresh list
+
+    } catch (err) {
+        console.error(err);
+        showMessage("Upload failed: " + err.message, true);
+    }
 };
 
-window.populateSeniorStreams = function() {
-    const level = document.getElementById('secondaryLevel')?.value;
-    const seniorGroup = document.getElementById('seniorStreamGroup');
-    if (seniorGroup) seniorGroup.style.display = (level === 'senior') ? 'block' : 'none';
-};
-
-// ==================== STUDENT DASHBOARD ====================
+// ==================== DASHBOARD FUNCTIONS ====================
 async function loadStudentResults() {
     const tbody = document.querySelector('table tbody');
     if (!tbody) return;
@@ -108,7 +250,6 @@ async function loadStudentResults() {
         : `<tr><td colspan="4">No results yet</td></tr>`;
 }
 
-// ==================== TEACHER DASHBOARD ====================
 async function loadStudentsByStream() {
     const tbody = document.querySelector('table tbody');
     if (!tbody) return;
@@ -118,7 +259,6 @@ async function loadStudentsByStream() {
         : `<tr><td colspan="3">No students found</td></tr>`;
 }
 
-// ==================== ADMIN DASHBOARD ====================
 async function loadAllUsers() {
     const tbody = document.querySelector('table tbody');
     if (!tbody) return;
@@ -146,10 +286,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.changeSlide(0);
     }
 
-    // Register Page
-    if (document.getElementById('registerForm') || document.title.toLowerCase().includes('register')) {
-        // Your form handlers remain active
-    }
+    // Setup Register Page
+    setupRegisterForm();
 
     // Login Page
     if (document.getElementById('loginForm') || document.title.toLowerCase().includes('login')) {
@@ -181,12 +319,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (document.title.toLowerCase().includes('student')) {
         await checkAuth(['student']);
         loadStudentResults();
+        loadNotes();                    // Added Notes
     }
 
     // Teacher Dashboard
     if (document.title.toLowerCase().includes('teacher')) {
         await checkAuth(['teacher']);
         loadStudentsByStream();
+        // loadNotes() can be added if you want teachers to see notes too
     }
 
     // Admin Dashboard
@@ -206,5 +346,5 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    console.log("✅ Maas Modern App Loaded Successfully (All Fixed)");
+    console.log("✅ Maas Modern App Loaded Successfully (All Fixed & Notes Added)");
 });
