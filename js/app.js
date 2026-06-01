@@ -8,7 +8,7 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ==================== GLOBAL VARIABLES ====================
 let currentUser = null;
 
-// ==================== REGISTER HELPER FUNCTIONS ====================
+// ==================== REGISTER HELPER FUNCTIONS (Safe) ====================
 window.updateRoleOptions = function() {
     const role = document.getElementById('role')?.value;
     const sectionGroup = document.getElementById('sectionGroup');
@@ -141,7 +141,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ==================== STUDENT DASHBOARD ====================
     if (document.getElementById('studentDashboard')) {
-
         window.checkAuthAndLoadName = async function() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) {
@@ -231,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = 'index.html';
         };
 
-        // Initialize Student Dashboard
+        // Initialize
         window.checkAuthAndLoadName();
     }
 
