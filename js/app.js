@@ -9,9 +9,7 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 window.updateRoleOptions = function() {
     const role = document.getElementById('role')?.value;
     const sectionGroup = document.getElementById('sectionGroup');
-    if (sectionGroup) {
-        sectionGroup.style.display = (role === 'student' || role === 'teacher') ? 'block' : 'none';
-    }
+    if (sectionGroup) sectionGroup.style.display = (role === 'student' || role === 'teacher') ? 'block' : 'none';
 };
 
 window.populateSubOptions = function() {
@@ -24,11 +22,7 @@ window.populateSubOptions = function() {
     seniorStreamGroup.style.display = 'none';
 
     if (role === 'student') {
-        if (section === 'junior-secondary' || section === 'senior-secondary') {
-            secondarySubGroup.style.display = 'block';
-        } else {
-            secondarySubGroup.style.display = 'none';
-        }
+        secondarySubGroup.style.display = (section === 'junior-secondary' || section === 'senior-secondary') ? 'block' : 'none';
     } else if (role === 'teacher') {
         secondarySubGroup.style.display = 'none';
     }
@@ -37,32 +31,40 @@ window.populateSubOptions = function() {
 window.populateSeniorStreams = function() {
     const level = document.getElementById('secondaryLevel')?.value;
     const seniorStreamGroup = document.getElementById('seniorStreamGroup');
-    if (seniorStreamGroup) {
-        seniorStreamGroup.style.display = (level === 'senior') ? 'block' : 'none';
-    }
+    if (seniorStreamGroup) seniorStreamGroup.style.display = (level === 'senior') ? 'block' : 'none';
 };
 
 // ==================== MAIN LOGIC ====================
 document.addEventListener('DOMContentLoaded', () => {
 
-    // Register Form
+    // ==================== REGISTER FORM (Very Lenient) ====================
     if (document.getElementById('registerForm')) {
         const submitBtn = document.getElementById('registerForm').querySelector('button[type="submit"]');
         const messageEl = document.getElementById('registerMessage');
 
+        // Very lenient validation
         function checkFormValidity() {
             const fullname = document.getElementById('fullName').value.trim();
             const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
             const role = document.getElementById('role').value;
-            submitBtn.disabled = !(fullname.length > 2 && email.length > 5 && password.length >= 6 && role);
+
+            // Only basic checks
+            const isValid = fullname.length > 1 && 
+                           email.length > 5 && 
+                           password.length >= 5 && 
+                           role !== '';
+
+            submitBtn.disabled = !isValid;
         }
 
+        // Real-time check
         ['fullName', 'regEmail', 'regPassword', 'role'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('input', checkFormValidity);
         });
 
+        // Form Submit
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const fullname = document.getElementById('fullName').value.trim();
@@ -107,6 +109,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 submitBtn.textContent = "Register";
             }
         });
+
+        checkFormValidity(); // Initial check
     }
 
     console.log("✅ Maas Modern App Loaded Successfully");
