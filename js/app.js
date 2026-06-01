@@ -30,7 +30,6 @@ async function checkAuth(allowedRoles = []) {
 
     currentProfile = profile;
 
-    // Display name safely
     const welcomeEls = document.querySelectorAll('strong, h2, p');
     welcomeEls.forEach(el => {
         if (el.textContent.includes('Loading') || el.textContent.includes('Welcome')) {
@@ -47,12 +46,12 @@ async function logout() {
 }
 
 function showMessage(msg, isError = false) {
-    const els = document.querySelectorAll('p, div');
+    const els = document.querySelectorAll('p, div, span');
     for (let el of els) {
-        if (el.textContent.length < 100) {
+        if (el.textContent.length < 150) {
             el.style.color = isError ? 'red' : 'green';
             el.textContent = msg;
-            setTimeout(() => el.textContent = '', 5000);
+            setTimeout(() => { if (el) el.textContent = ''; }, 5000);
             break;
         }
     }
@@ -66,7 +65,7 @@ function calculateGrade(score) {
     return 'F';
 }
 
-// ==================== INDEX GALLERY ====================
+// ==================== GALLERY ====================
 let slideIndex = 0;
 window.changeSlide = function(n) {
     const images = document.querySelectorAll('img');
@@ -77,33 +76,29 @@ window.changeSlide = function(n) {
     });
 };
 
-// ==================== REGISTER PAGE (Fixed + Reduced Security) ====================
+// ==================== REGISTER PAGE (Fixed Button + Reduced Security) ====================
 function setupRegisterForm() {
-    const form = document.getElementById('registerForm');
+    const form = document.getElementById('registerForm') || document.querySelector('form');
     if (!form) return;
 
-    const registerBtn = document.getElementById('registerBtn') || form.querySelector('button[type="submit"]');
-    
-    // Fix fading button
+    const registerBtn = form.querySelector('button, input[type="submit"]');
     if (registerBtn) {
         registerBtn.style.opacity = '1';
         registerBtn.style.backgroundColor = '#4CAF50';
         registerBtn.style.color = 'white';
         registerBtn.style.cursor = 'pointer';
         registerBtn.style.border = 'none';
-        registerBtn.style.padding = '12px 24px';
+        registerBtn.style.padding = '12px 30px';
     }
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const fullName = document.getElementById('fullName')?.value;
-        const email = document.getElementById('email')?.value;
-        const password = document.getElementById('password')?.value;
+        const fullName = document.getElementById('fullName')?.value || document.querySelector('input[placeholder*="Name"]')?.value;
+        const email = document.getElementById('email')?.value || document.querySelector('input[type="email"]')?.value;
+        const password = document.getElementById('password')?.value || document.querySelector('input[type="password"]')?.value;
         const role = document.getElementById('role')?.value;
-        const schoolSection = document.getElementById('schoolSection')?.value;
-        const secondaryLevel = document.getElementById('secondaryLevel')?.value;
-        const seniorStream = document.getElementById('seniorStream')?.value;
+        const schoolSection = document.getElementById('schoolSection')?.value || null;
 
         if (!fullName || !email || !password || !role) {
             showMessage("Please fill all required fields", true);
@@ -119,34 +114,29 @@ function setupRegisterForm() {
 
             if (error) throw error;
 
-            const { error: profileError } = await supabaseClient
-                .from('profiles')
-                .insert({
-                    id: data.user.id,
-                    full_name: fullName,
-                    role: role,
-                    school_section: schoolSection || null,
-                    secondary_level: secondaryLevel || null,
-                    senior_stream: seniorStream || null,
-                    created_at: new Date().toISOString()
-                });
+            const { error: profileError } = await supabaseClient.from('profiles').insert({
+                id: data.user.id,
+                full_name: fullName,
+                role: role,
+                school_section: schoolSection,
+                created_at: new Date().toISOString()
+            });
 
             if (profileError) throw profileError;
 
-            showMessage("Registration successful! Redirecting to login...");
+            showMessage("Registration successful! Redirecting to login...", false);
             setTimeout(() => window.location.href = 'login.html', 2000);
-
         } catch (err) {
             console.error(err);
-            showMessage(err.message || "Registration failed. Try again.", true);
+            showMessage(err.message || "Registration failed", true);
         }
     });
 }
 
 // ==================== NOTES FUNCTIONALITY ====================
 async function loadNotes() {
-    const notesContainer = document.getElementById('notesContainer');
-    if (!notesContainer) return;
+    const container = document.getElementById('notesContainer');
+    if (!container) return;
 
     try {
         const { data, error } = await supabaseClient
@@ -156,25 +146,20 @@ async function loadNotes() {
 
         if (error) throw error;
 
-        if (!data || data.length === 0) {
-            notesContainer.innerHTML = `<p>No notes available yet.</p>`;
-            return;
-        }
-
-        notesContainer.innerHTML = data.map(note => `
-            <div class="note-card" style="border:1px solid #ddd; padding:15px; margin:10px 0; border-radius:8px; background:#f9f9f9;">
-                <h4>${note.title}</h4>
-                <p><strong>Subject:</strong> ${note.subject} | <strong>By:</strong> ${note.teacher_name}</p>
-                <p>${note.description || 'No description provided.'}</p>
-                <button onclick="downloadNote('\( {note.file_url}', ' \){note.title}')" 
-                        style="background:#2196F3; color:white; padding:8px 16px; border:none; border-radius:4px; cursor:pointer;">
-                    📥 Download Note
-                </button>
-            </div>
-        `).join('');
+        container.innerHTML = data?.length 
+            ? data.map(note => `
+                <div class="note-card" style="border:1px solid #ddd; padding:15px; margin:10px 0; border-radius:8px;">
+                    <h4>${note.title}</h4>
+                    <p><strong>Subject:</strong> ${note.subject} | <strong>Teacher:</strong> ${note.teacher_name}</p>
+                    <button onclick="downloadNote('\( {note.file_url}', ' \){note.title}')" 
+                            style="background:#2196F3; color:white; padding:10px 18px; border:none; border-radius:5px; cursor:pointer;">
+                        📥 Download
+                    </button>
+                </div>
+            `).join('')
+            : `<p>No notes available yet.</p>`;
     } catch (err) {
-        console.error(err);
-        notesContainer.innerHTML = `<p style="color:red">Failed to load notes</p>`;
+        container.innerHTML = `<p style="color:red">Failed to load notes</p>`;
     }
 }
 
@@ -194,15 +179,13 @@ window.downloadNote = async function(fileUrl, title) {
     }
 };
 
-// For Teachers - Upload Note
 window.uploadNote = async function() {
     const title = document.getElementById('noteTitle')?.value;
     const subject = document.getElementById('noteSubject')?.value;
-    const description = document.getElementById('noteDescription')?.value || '';
     const fileInput = document.getElementById('noteFile');
 
     if (!title || !subject || !fileInput?.files[0]) {
-        alert("Please fill title, subject and select a file");
+        alert("Please fill all fields and select a file");
         return;
     }
 
@@ -210,32 +193,27 @@ window.uploadNote = async function() {
     const fileName = `\( {Date.now()}- \){file.name}`;
 
     try {
-        const { data: fileData, error: uploadError } = await supabaseClient.storage
+        const { error: uploadError } = await supabaseClient.storage
             .from('notes')
-            .upload(fileName, file, { upsert: true });
+            .upload(fileName, file);
 
         if (uploadError) throw uploadError;
 
         const publicUrl = supabaseClient.storage.from('notes').getPublicUrl(fileName).data.publicUrl;
 
-        const { error: dbError } = await supabaseClient
-            .from('notes')
-            .insert({
-                title,
-                subject,
-                description,
-                teacher_name: currentProfile.full_name,
-                file_url: publicUrl,
-                uploaded_by: currentUser.id
-            });
+        const { error: dbError } = await supabaseClient.from('notes').insert({
+            title,
+            subject,
+            teacher_name: currentProfile.full_name,
+            file_url: publicUrl,
+            uploaded_by: currentUser.id
+        });
 
         if (dbError) throw dbError;
 
         showMessage("Note uploaded successfully!");
-        loadNotes(); // Refresh list
-
+        loadNotes();
     } catch (err) {
-        console.error(err);
         showMessage("Upload failed: " + err.message, true);
     }
 };
@@ -278,25 +256,49 @@ async function loadAllStudentResults() {
         : `<tr><td colspan="5">No results</td></tr>`;
 }
 
+// ==================== STUDENT TABS ====================
+function setupStudentTabs() {
+    const resultsTab = document.getElementById('resultsTab');
+    const notesTab = document.getElementById('notesTab');
+    const resultsContent = document.getElementById('resultsContent');
+    const notesContent = document.getElementById('notesContent');
+
+    if (resultsTab && notesTab) {
+        resultsTab.addEventListener('click', () => {
+            resultsTab.classList.add('active');
+            notesTab.classList.remove('active');
+            if (resultsContent) resultsContent.style.display = 'block';
+            if (notesContent) notesContent.style.display = 'none';
+        });
+
+        notesTab.addEventListener('click', () => {
+            notesTab.classList.add('active');
+            resultsTab.classList.remove('active');
+            if (resultsContent) resultsContent.style.display = 'none';
+            if (notesContent) notesContent.style.display = 'block';
+            loadNotes();
+        });
+    }
+}
+
 // ==================== MAIN LOGIC ====================
 document.addEventListener('DOMContentLoaded', async () => {
 
-    // Fix Gallery on Index
     if (document.querySelector('img')) {
         window.changeSlide(0);
     }
 
-    // Setup Register Page
     setupRegisterForm();
+    setupStudentTabs();
 
     // Login Page
-    if (document.getElementById('loginForm') || document.title.toLowerCase().includes('login')) {
+    if (document.title.toLowerCase().includes('login')) {
         const form = document.getElementById('loginForm') || document.querySelector('form');
         if (form) {
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const email = document.getElementById('email')?.value || document.querySelector('input[type="email"]').value;
-                const password = document.getElementById('password')?.value || document.querySelector('input[type="password"]').value;
+                const email = document.getElementById('email')?.value || document.querySelector('input[type="email"]')?.value;
+                const password = document.getElementById('password')?.value || document.querySelector('input[type="password"]')?.value;
 
                 try {
                     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
@@ -319,14 +321,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (document.title.toLowerCase().includes('student')) {
         await checkAuth(['student']);
         loadStudentResults();
-        loadNotes();                    // Added Notes
+        loadNotes();   // Load notes on page load
     }
 
     // Teacher Dashboard
     if (document.title.toLowerCase().includes('teacher')) {
         await checkAuth(['teacher']);
         loadStudentsByStream();
-        // loadNotes() can be added if you want teachers to see notes too
     }
 
     // Admin Dashboard
@@ -336,7 +337,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadAllStudentResults();
     }
 
-    // Logout Buttons
+    // Logout
     document.querySelectorAll('a, button').forEach(el => {
         if (el.textContent.toLowerCase().includes('logout')) {
             el.addEventListener('click', (e) => {
@@ -346,5 +347,5 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    console.log("✅ Maas Modern App Loaded Successfully (All Fixed & Notes Added)");
+    console.log("✅ Maas Modern App Loaded Successfully");
 });
